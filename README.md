@@ -22,6 +22,27 @@ explicitly indexed universes:
 <level> ::= <natural-number>             // universe level
 ```
 
+TODO:
+
+- In order to cleanly handle non-dependent function types without introducing
+  new syntax, need the dependence-graphing algorithm to be able to decide if a Π
+  introduces a dependency or not
+- Wouldn't it be nice to support names? at least for the view? maybe names can
+  be a part of a term's metadata rather than syntax structure, and then the view
+  shows the names rather than the De Bruijn indices which are derived from a
+  simple query on the lambda/let term's metadata. Then there is an issue of
+  possible namespace clashes that appear in the view but are implictly resolved
+  by the DeBruijn indices, here is a possible solution: [Namespaced De Bruijn
+  Indices][namespaced de bruijn indices].
+- How to handle inputting universe levels? For now we should choose something
+  simple and general as a placeholder that we can decide on later, but here are
+  the options for going forward after that:
+  - Have explicit manipulation of levels, or perhaps levels are just a basic
+    thing that can be input as opposed to another term that has type Level or
+    something (so, there can't be level holes).
+  - Agda-style: levels can be quantified over using a primitive type `Level`
+  - TODO: other ways?
+
 ## Design Goals
 
 - No unification
@@ -64,7 +85,7 @@ The interaction loop with the programming environment has three components:
 
 ## Manipulating Source Code
 
-TODO
+TODO:
 
 - cut-copy-pasting blocks
 - manipulating contexts of prefab blocks
@@ -72,3 +93,10 @@ TODO
     argument, then when that argument is dug then its type will still be
     instantiated with any specifications that were achieved from the context.
     - Example: TODO
+
+## References
+
+- [Namespaced DeBruijn Indices][namespaced debruijn indices]
+
+[namespaced debruijn indices]:
+  https://www.haskellforall.com/2021/08/namespaced-de-bruijn-indices.html
