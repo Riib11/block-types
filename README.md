@@ -1,73 +1,46 @@
-# Block Types
+# Getting Started with Create React App
 
-TODO: decide on name
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Overview
+## Available Scripts
 
-This project aims to formalize and implement an interactive programming
-environment based on typed holes.
+In the project directory, you can run:
 
-The _base language_ is a variant of the dependently typed lambda calculus with
-explicitly indexed universes:
+### `yarn start`
 
-```
-<term>  ::= U_<level>                    // universe
-          | Π <term*> <term>             // dependent type abstraction
-          | λ <term*>                    // abstraction
-          | <var> <term*>                // application
-          | let <term>: <term> in <term> // annotated abstraction
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-<var>   ::= <natural-number>             // DeBruijn index
-<level> ::= <natural-number>             // universe level
-```
+The page will reload if you make edits.\
+You will also see any lint errors in the console.
 
-## Design Goals
+### `yarn test`
 
-- No unification
-- Raw source code is rich with metadata such as: context, type, dependencies
-  (graph)
-- The only way of interacting with the source code is through a programming
-  environment that allows a very limited set of basic capabilities (along with
-  metaprogramming features for convenience) which maintain the invariant that
-  the **program is always well-typed**
+Launches the test runner in the interactive watch mode.\
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-## Representing and Viewing Source Code
+### `yarn build`
 
-The interaction loop with the programming environment has three components:
+Builds the app for production to the `build` folder.\
+It correctly bundles React in production mode and optimizes the build for the best performance.
 
-1. The user's _input_ is encoded as a transition in a FSM model of the current
-   state. The transition is chosen from a palette of valid options computed for
-   each state as needed. The basic kinds of transitions are:
-   - _Fill hole_. Fill the currently selected hole with the selected
-     constructor. This will generate new holes in the new term as necessary.
-   - _Dig hole_. Replace the selected term with a new hole. This is only a valid
-     operation if no other parts of the program are _dependent_ on that term.
-     TODO: how exactly to calculate dependencies? GOAL: always err towards
-     safety, as to never allow an unsafe dig even if this prevents some safe
-     digs.
-   - _Select hole_. Focus the programming environment on a particular hole. This
-     brings into view the hole's context and possible fills.
-   - TODO: other transitions?
-2. The _state_ updates according to the input transition. The state is the
-   source code of the programming, which contains all the information necessary
-   to immediately respond to queries about features of terms such as types,
-   contexts, and TODO: what else is needed? The source code is extremely verbose
-   and should never need to be inspected by the user, but is encoded purely
-   textually in order to allow from cross-application copy-pasting and similar
-   operations.
-3. The _view_ is generated from the state in order to show the user a nice
-   presentation of the important components of the source code without
-   cluttering it with all the information contained in the source code's
-   verbosity. Information can be queried about program terms by interacting with
-   the GUI.
+The build is minified and the filenames include the hashes.\
+Your app is ready to be deployed!
 
-## Manipulating Source Code
+See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-TODO
+### `yarn eject`
 
-- cut-copy-pasting blocks
-- manipulating contexts of prefab blocks
-  - if a hole is filled in such a way that specifies the type of the filled
-    argument, then when that argument is dug then its type will still be
-    instantiated with any specifications that were achieved from the context.
-    - Example: TODO
+**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+
+If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+
+You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+
+## Learn More
+
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+
+To learn React, check out the [React documentation](https://reactjs.org/).
