@@ -72,8 +72,8 @@ and are considering the application
 f a b :: G a b
 ```
 
-then we see that `a: U₀` and `b: F a`. Since `a` appears in the type of `b`
-which is `F a`, `b` is dependent on `a`.
+then we see that `b` depends on `a` since `a` appears in the type of `b` which
+is `F a`.
 
 In general, dependencies are possible in the following situations:
 
