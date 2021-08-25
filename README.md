@@ -22,8 +22,25 @@ explicitly indexed universes:
 <level> ::= <natural-number>                       // universe level
 ```
 
+Notes:
+
+- A λ-term does not need a variable name binding because we are using
+  DeBruijn-indexed variables. However, its nice for the view to display
+  user-chosen variable names. To facilitate this, the binding of a variable by a
+  Π-type is annotated with a variable name, and `<var>` references to that
+  variable will be substituted in the view with that variable name. A λ-term
+  does not need to be annotated with a variable name since the name must be
+  immediately queriable from its type since the type must contain a
+  corresponding Π-type which has the variable name annotation
+- A λ-term does not need a domain annotation because it cannot appear on the
+  left end of an application. The only way for a lambda to be used (by
+  reference) on the left end of an application is via a let-term, which must
+  have a domain annotation.
+
 TODO:
 
+- How to do termination-checking? Perhaps that is an annoying detail to leave
+  till later? Since there are probably many different ways to go about this
 - In order to cleanly handle non-dependent function types without introducing
   new syntax, need the dependence-graphing algorithm to be able to decide if a Π
   introduces a dependency or not
@@ -45,6 +62,7 @@ TODO:
 - How to allow inductive data types?
   - Self types
   - Automatic translation to heirarchy of Church encodings
+  - TODO: Aaron Stump's other ways to derive induction data types
 
 ## Design Goals
 
