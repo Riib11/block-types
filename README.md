@@ -12,7 +12,7 @@ explicitly indexed universes:
 
 ```
 <term>  ::= U_<level>                    // universe type
-          | Π <term*> <term>             // Π-type
+          | Π <term*> . <term>           // Π-type
           | λ <term>                     // λ-term
           | <var> <term*>                // application
           | let <term>: <term> in <term> // let-term
