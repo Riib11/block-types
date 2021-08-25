@@ -42,6 +42,9 @@ TODO:
     something (so, there can't be level holes).
   - Agda-style: levels can be quantified over using a primitive type `Level`
   - TODO: other ways?
+- How to allow inductive data types?
+  - Self types
+  - Automatic translation to heirarchy of Church encodings
 
 ## Design Goals
 
