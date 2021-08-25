@@ -11,16 +11,14 @@ The _base language_ is a variant of the dependently typed lambda calculus with
 explicitly indexed universes:
 
 ```
-<term>  ::= Π(<arg*>) <term>
-          | λ(<arg*>) <term>
-          | U_<level>
-          | <var>
-          | <var> <arg*>
-          | let <arg>: <term> = <term> in <term>
+<term>  ::= U_<level>                    // universe
+          | Π <term*> <term>             // dependent type abstraction
+          | λ <term*>                    // abstraction
+          | <var> <term*>                // application
+          | let <term>: <term> in <term> // annotated abstraction
 
-<arg>   ::= <name>: <term>
-<var>   ::= <name>
-<level> ::= <natural-number>
+<var>   ::= <natural-number>             // DeBruijn index
+<level> ::= <natural-number>             // universe level
 ```
 
 ## Design Goals
