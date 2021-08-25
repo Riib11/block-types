@@ -13,7 +13,7 @@ explicitly indexed universes:
 ```
 <term>  ::= U_<level>                    // universe
           | Π <term*> <term>             // dependent type abstraction
-          | λ <term*>                    // abstraction
+          | λ <term>                     // abstraction
           | <var> <term*>                // application
           | let <term>: <term> in <term> // annotated abstraction
 
