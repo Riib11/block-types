@@ -16,6 +16,7 @@ explicitly indexed universes:
           | λ <term>                     // λ-term
           | <var> <term*>                // application
           | let <term>: <term> in <term> // let-term
+          | ?                            // hole
 
 <var>   ::= <natural-number>             // DeBruijn index
 <level> ::= <natural-number>             // universe level
