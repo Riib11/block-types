@@ -22,8 +22,8 @@ disallows currying.
 For example, suppose we have the terms
 
 ```
-id : Π (A : U0) . Π (x : A) . A
-A  : U0
+id : Π (A : U₀) . Π (x : A) . A
+A  : U₀
 ```
 
 Then we are not allowed to simply write the application
@@ -61,9 +61,9 @@ A term `b` is _dependent_ on another term `a` if `a` appears in the type of `b`.
 For example, if we have some terms
 
 ```
-F : Π (x : U0) . U0
-G : Π (x : U0) (y : U0) . U0
-f : Π (x : U0) (y : F x) . G x y
+F : Π (x : U₀) . U₀
+G : Π (x : U₀) (y : U₀) . U₀
+f : Π (x : U₀) (y : F x) . G x y
 ```
 
 and are considering the application
@@ -72,12 +72,12 @@ and are considering the application
 f a b :: G a b
 ```
 
-then we see that `a: U0` and `b: F a`. Since `a` appears in the type of `b`
+then we see that `a: U₀` and `b: F a`. Since `a` appears in the type of `b`
 which is `F a`, `b` is dependent on `a`.
 
 In general, dependencies are possible in the following situations:
 
-- In an application `f a_1 ... a_n`, each argument `a_i` depends on `f` and all
+- In an application `f a_1 … a_n`, each argument `a_i` depends on `f` and all
   arguments `a_1` through `a_{i-1}`.
 - In a let-term `let x : A = a in b`, the term `a` depends on its type `A`
 - In a Π-type `Π x : A . B`, the type `B` depends on the type `A`.
@@ -86,9 +86,9 @@ These are all of this situations where a dependency is _possible_, but do not
 necessarily imply a dependency. For example, if we following terms
 
 ```
-A, B  : U0
+A, B  : U₀
 a, b  :
-const : Π (A : U0) (B : U0) (x : A) (y : B) . A
+const : Π (A : U₀) (B : U₀) (x : A) (y : B) . A
 ```
 
 an consider the application
@@ -120,3 +120,37 @@ the hole is at the top of the dependended-upon term. For example, a hole with
 type `Π (x : ?) ?` can be filled with `λ ?` even though the type has holes in
 it, since those holes are not at the top and it is known that `λ ?` is a valid
 fill no matter what the holes in the type are filled with.
+
+### Dependency-Graphing Algorithm
+
+TODO
+
+## Type-Checking Algorithm
+
+```
+infer : Ctx → Term → Type
+infer ctx (U_l)                = U_{l + 1}
+infer ctx (Π (x : A) . B)      = U_{l_1} ← infer A; U_{l_2} ← infer B;
+                                 U_{l_1 ⊓ l_2}
+infer ctx (λ b)                = TODO: should never need to infer this…
+infer ctx (f a_1 … a_n)        = Π (x_1:A_1) … (x_n:A_n) . B ← lookup ctx f; check a_1 A_1; …; check a_n A_n; B
+infer ctx (let x : A = a in b) = check a A ; infer (ctx , x : A) b
+infer ctx (?)                  = TODO: how to keep track over this? can't be just a fresh variable because we don't want to do unification. this type must be in the context, and is determined when the hole is generated.
+```
+
+```
+check : Ctx -> Term -> Type -> Bool
+check ctx (U_{l_1})            (U_{l_2})       = l₁ ≤ l₂
+check ctx (Π (x : A) . B)      (U_l)           = U_{l_1} ← infer A; U_{l_2} ← infer B; l_1 ⊔ l_2 ≤ l
+check ctx (λ b)                (Π (x : A) . B) = B' ← infer (ctx , x : A) b; B' == B
+check ctx (f a_1 … a_n)        (B)             = infer ctx (f a_1 … a_n) == B
+check ctx (let x : A = a in b) (B)             = check ctx a A; infer b == B
+check ctx (?)                  (B)             = infer ctx ? == B
+```
+
+TODO: how to implement (==) for types? Need to do normalization first, ignore
+variable names, and anythng else?
+
+TODO: anything else that needs to be handled for levels? Here is using a
+cumulative universe heirarchy, but could make the level comparisons (==) in
+order to force non-cumulative
