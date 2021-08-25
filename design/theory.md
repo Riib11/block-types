@@ -1,8 +1,6 @@
 # Theory
 
-## Ideas
-
-### Unificationless
+## Unificationless
 
 Since a term is built up incrementally such that
 
@@ -15,7 +13,7 @@ indirect and annoying constraint-solving unification algorithm.
 
 TODO: how to do this exactly?
 
-### α-Normal Forms
+## α-Normal Forms
 
 TODO: Is this the correct name for this? Something to do with α-conversion
 
@@ -46,7 +44,7 @@ write
 TODO: Something about how this allows for better normal forms for something? I
 forget
 
-### β-Normal Forms
+## β-Normal Forms
 
 Is is disallowed to have a lambda on the left end of an application; only
 variables can be on the left end of an application. This is because TODO: give
