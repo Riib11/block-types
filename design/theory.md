@@ -13,9 +13,7 @@ indirect and annoying constraint-solving unification algorithm.
 
 TODO: how to do this exactly?
 
-## α-Normal Forms
-
-TODO: Is this the correct name for this? Something to do with α-conversion
+## η-Normal Forms
 
 It is disallowed to have a variable without applying it to all of its required
 arguments (which may be count 0 if it is constant). Note that in particular this
