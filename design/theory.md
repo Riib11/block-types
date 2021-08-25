@@ -130,8 +130,7 @@ TODO
 ```
 infer : Ctx → Term → Type
 infer ctx (U_l)                = U_{l + 1}
-infer ctx (Π (x : A) . B)      = U_{l_1} ← infer A; U_{l_2} ← infer B;
-                                 U_{l_1 ⊓ l_2}
+infer ctx (Π (x : A) . B)      = U_{l_1} ← infer A; U_{l_2} ← infer B; U_{l_1 ⊓ l_2}
 infer ctx (λ b)                = TODO: should never need to infer this…
 infer ctx (f a_1 … a_n)        = Π (x_1:A_1) … (x_n:A_n) . B ← lookup ctx f; check a_1 A_1; …; check a_n A_n; B
 infer ctx (let x : A = a in b) = check a A ; infer (ctx , x : A) b
