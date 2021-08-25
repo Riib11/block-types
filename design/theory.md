@@ -42,6 +42,11 @@ write
 TODO: Something about how this allows for better normal forms for something? I
 forget
 
+TODO: mention complication where let-bound variables that are used as arguments
+to dependent functions may not work with other arguments whose types depend on
+the valud of the let-bound variable, but would work if that variable was
+substituted with the value bound by the let.
+
 ## β-Normal Forms
 
 Is is disallowed to have a lambda on the left end of an application; only
