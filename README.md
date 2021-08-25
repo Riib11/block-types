@@ -15,7 +15,7 @@ explicitly indexed universes:
           | Π <term*> <term>             // Π-type
           | λ <term>                     // λ-term
           | <var> <term*>                // application
-          | let <term>: <term> in <term> // annotated λ-term (let-term)
+          | let <term>: <term> in <term> // let-term
 
 <var>   ::= <natural-number>             // DeBruijn index
 <level> ::= <natural-number>             // universe level
