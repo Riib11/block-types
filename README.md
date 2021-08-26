@@ -7,13 +7,12 @@ TODO: decide on name
 This project aims to formalize and implement an interactive programming
 environment based on typed holes.
 
-The _base language_ is a variant of the dependently typed lambda calculus with
+The _base language_ is a variant of the dependently typed λ-calculus with
 explicitly indexed universes:
 
 ```
 <term>  ::= U_<level>                              // universe type
           | Π <name> : <term> . <term>             // Π-type
-          | λ <term>                               // λ-term
           | <var> <term*>                          // application
           | let <name> : <term> = <term> in <term> // let-term
           | ?                                      // hole
@@ -33,9 +32,13 @@ Notes:
   immediately queriable from its type since the type must contain a
   corresponding Π-type which has the variable name annotation
 - A λ-term does not need a domain annotation because it cannot appear on the
-  left end of an application. The only way for a lambda to be used (by
+  left end of an application. The only way for a λ-term to be used (by
   reference) on the left end of an application is via a let-term, which must
   have a domain annotation.
+- Due to the required eta-abstraction, λ-terms are actually redundant in our
+  syntax. Since a term's type is always immediately queriable, all information
+  about the presence of λ-terms and their bound variable names are contained in
+  their type's Π-types
 
 TODO:
 
@@ -47,9 +50,9 @@ TODO:
 - Wouldn't it be nice to support names? at least for the view? maybe names can
   be a part of a term's metadata rather than syntax structure, and then the view
   shows the names rather than the De Bruijn indices which are derived from a
-  simple query on the lambda/let term's metadata. Then there is an issue of
-  possible namespace clashes that appear in the view but are implictly resolved
-  by the DeBruijn indices, here is a possible solution: [Namespaced De Bruijn
+  simple query on the λ/let-term's metadata. Then there is an issue of possible
+  namespace clashes that appear in the view but are implictly resolved by the
+  DeBruijn indices, here is a possible solution: [Namespaced De Bruijn
   Indices][namespaced de bruijn indices].
 - How to handle inputting universe levels? For now we should choose something
   simple and general as a placeholder that we can decide on later, but here are
