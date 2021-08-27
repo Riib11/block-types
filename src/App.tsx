@@ -16,6 +16,13 @@ export default class App extends React.Component<Props, State> {
     super(props);
     let app = this;
     document.addEventListener("keydown", (evt: KeyboardEvent) => {
+      // TODO: other useful keybindings e.g.
+      // - selecting fill
+      // - filtering fills (esp. variable names for neutral forms)
+      // - digging
+      // - TODO: other kinds of transitions
+
+      // hole navigation
       if (app.state.id !== undefined) {
         // select hole to the left or right
         if (["ArrowLeft", "ArrowRight"].includes(evt.key)) {
