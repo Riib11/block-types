@@ -1,0 +1,101 @@
+.html,
+.body,
+.root {
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  position: fixed;
+  left: 0;
+  top: 0;
+
+  font-size: 12pt;
+}
+
+.display {
+  position: fixed;
+  width: calc(50vw - 20px);
+  height: 100%;
+  padding: 10px;
+
+  font-family: "Courier New", Courier, monospace;
+  box-shadow: -1px 0 0 0 black inset;
+}
+
+.panel {
+  position: fixed;
+  width: calc(50vw - 20px);
+  height: 100%;
+  padding: 10px;
+  margin-left: 50vw;
+}
+
+.panel > div {
+  margin-bottom: 20px;
+}
+
+.environment {
+  padding: 5px;
+
+  font-family: "Courier New", Courier, monospace;
+  box-shadow: 0 0 0 1px black inset;
+}
+
+.context {
+  font-family: "Courier New", Courier, monospace;
+}
+
+.goal {
+  font-family: "Courier New", Courier, monospace;
+}
+
+.palette {
+}
+
+.palette-item {
+  padding: 5px;
+  margin-bottom: 5px;
+
+  font-family: "Courier New", Courier, monospace;
+  box-shadow: 0 0 0 1px black inset;
+  cursor: pointer;
+}
+
+.palette-item:hover {
+  background-color: rgb(196, 196, 196);
+}
+
+/* Syntax */
+
+.prgm {
+}
+.prgm.jud {
+}
+
+.term {
+}
+.term.uni {
+}
+.term.pi {
+}
+.term.lam {
+}
+.term.neu {
+}
+.term.var {
+}
+.term.app {
+}
+.term.let {
+}
+.term.hol {
+}
+
+.holeId.unfocussed {
+  cursor: pointer;
+  background-color: rgb(165, 157, 255);
+}
+.holeId.focussed {
+  background-color: rgb(127, 254, 209);
+}

@@ -1,13 +1,30 @@
+// Program
+
+export type Prgm
+  = {case: "jud", term: Term, type: Term} // judgement
+
 // Term
 
 export type Term
-  = {case: "uni", lvl: Lvl, data: Data}                            // universe type
-  | {case: "pi",  domains: Term[], body: Term, data: Data}         // Pi-type
-  | {case: "lam", body: Term, data: Data}                          // lambda-term
-  | {case: "app", app: Var, args: Term[], data: Data}              // application
-  | {case: "let", arg: Term, domain: Term, body: Term, data: Data} // let-term
-  | {case: "hole", id: HoleId, data: Data}
+  = {case: "uni", lvl: Lvl, dat?: Data} // universe type
+  | {case: "pi",  id: Id, dom: Term, bod: Term, dat?: Data} // Π-type
+  | {case: "lam", bod: Term, dat?: Data} // λ-term
+  // | {case: "app", app: Var, args: Term[], dat?: Data} // neutral
+  | {case: "neu", neu: Neu, dat?: Data} // neutral
+  | {case: "let", id: Id, dom: Term, arg: Term, bod: Term, dat?: Data} // let-term
+  | {case: "hol", id: HoleId, dat?: Data}
 ;
+
+export type Type = Term // except without let-term case
+
+// Neutral Form
+
+export type Neu
+  = {case: "var", var: Var}
+  | {case: "app", app: Neu, arg: Term}
+;
+
+export type Id = string;
 export type Var = number; // natural number
 export type Lvl = number; // natural number
 
@@ -20,6 +37,37 @@ export function emptyData() { return {}; }
 // HoleId
 
 // Each hole id is just a unique reference to a trivial object.
-export type HoleId = {};
+export type HoleId = {ix: number};
 
-export function freshHoleId() { return {}; }
+let freshHoleIx = -1;
+export function freshHoleId(): HoleId {
+  freshHoleIx++;
+  return {ix: freshHoleIx};
+}
+export function freshHole(): Term { return {case: "hol", id: freshHoleId(), dat: emptyData()} }
+
+// HoleIds
+
+export function getHoleIds(p: Prgm): HoleId[] {
+  let ids: HoleId[] = [];
+  function goNeu(neu: Neu): void {
+    switch(neu.case) {
+      case "var": return;
+      case "app": goNeu(neu.app); go(neu.arg); return;
+    }
+  }
+  function go(a: Term): void {
+    switch (a.case) {
+      case "uni": return;
+      case "pi": go(a.dom); go(a.bod); return;
+      case "lam": go(a.bod); return;
+      case "neu": goNeu(a.neu); return;
+      case "let": go(a.arg); go(a.bod); return;
+      case "hol": ids.push(a.id); return;
+    }
+  }
+  switch (p.case) {
+    case "jud": go(p.term); go(p.type); break;
+  }
+  return ids;
+}
