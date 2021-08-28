@@ -50,7 +50,7 @@
     [(varr index)
      ((sub index) id-ren)]
     [(app e1 e2)
-     ((evalNeImpl sub e1) (evalImpl sub e2))]))
+     ((evalNeImpl sub e1) (lambda (ren) (evalImpl (transSR sub ren) e2)))]))
 
 ;; sub : Sub G1 G2
 (define (evalImpl sub e) ; (Sub G1 G2) -> Syn G1 T -> Sem G2 ..T
@@ -83,7 +83,7 @@
     [(Stype level) (Sneutral e)]
     [(SPi x A B)
      (lambda (a) (reflect (B id-ren a) (app e (reify (A id-ren) a))))]
-    [(Sneutral T) (Sneutral e)]
+    [(Sneutral T) (neutral e)]
     [any (raise "shouldn't get here")]))
 
 ;; weaken1Ren : Ren Γ (Γ , T)
@@ -101,62 +101,75 @@
      (match (e id-ren)
        [(Stype level) (type level)]
        [(SPi x A B)
-        (Pi x (reify (Stype level) A) ;; TODO: CHECK
+        (Pi x (reify (Stype level) A)
             (reify (Stype level)
-                   (lambda (ren) (B (forget1ren ren)
-                                    (lambda (ren2) (reflect (A (transRR (forget1ren ren) ren2)) (varr (ren2 0))))))))]
-       [(Sneutral e) "hole"]
+                   ;; Following lines have type: GSemT (G , ..A)
+                   (lambda (ren) ; ren : Ren (G , .. A) G'
+                     (B (forget1ren ren)
+                        ;; Next line has type: GSemT G' ..A
+                        (lambda (ren2) (reflect (A (transRR (forget1ren ren) ren2)) (varr (ren2 0))))))))]
+       [(Sneutral e) (neutral e)] ;; TODO: is this right?
        [any (raise any)])]
-    [(SPi x A B)
-     (lam (reify (B weaken1Ren (reflect (A weaken1Ren) (varr 0))) ;; TODO: CHECK!
-                 (lambda (ren) ((e (forget1ren ren))
-                                  (lambda (ren2)
-                                    (reflect (A (forget1ren (transRR ren ren2)))
-                                             (varr (ren2 (ren 0)))))))))]
+    [(SPi x A B) ;; e : GSem G (SPi x A B) = (ren : Ren G G') -> (GSem G' (.. ren A)) -> (Sem G' (.... B))
+     (lam (reify (B weaken1Ren
+                    (lambda (ren) (reflect (A (forget1ren ren)) (varr (ren 0)))))
+                 ;; The following line has type GSemT (G , (A weaken1Ren)) ..B
+                 (lambda (ren) ;; ren : Ren (G, (A...)) G',     following lines : SemT G' ...B
+                   ((e (forget1ren ren))
+                    ;; following lines : GSem G' (... ren A)
+                    (lambda (ren2) ; ren2 : Ren G' G''
+                      (reflect (A (transRR (forget1ren ren) ren2))
+                               (varr (ren2 (ren 0)))))))))]
     [(Sneutral T) (e id-ren)]
     [any (raise "shouldn't get here2")]))
+
+;; TODO: reify should output neutral somewhere!
 
 ;idSub : ∀{Γ} → Sub Γ Γ
 (define (id-sub ctx) ;; ctx is list of GSemT's
   (lambda (x)
-    (lambda (ren) (reflect ((list-ref ctx x) ren) (varr (ren x))))))
+    (lambda (ren) (reflect ((list-ref ctx x) ren) (neutral (varr (ren x)))))))
 
 ;normalize : ∀{Γ T} → Exp Γ T → Nf Γ T
 (define (normalize T e)
   (reify (eval T) (lambda (ren) (evalImpl (transSR (id-sub '()) ren) e))))
 
-;; for each example, try (reify (eval typen) (eval termn))
+;; Some test cases.
+;; for each example, try (normalize typen termn)
 
-;(define type1
-;  (Pi 'X (type) (type)))
-;(define term1
-;  (lam 'X (app (lam 'x (varr 'x)) (varr 'X))))
+(define type1
+  (Pi 'X (type 5) (type 5)))
+(define term1
+  (lam (lett 'X (neutral (varr 0)) (type 5) (neutral (varr 0)))))
+;; Should give: (lam (neutral (varr 0)))
 
-;(define type2 (type))
-;(define term2
-;  (Pi 'P (Pi '_ (type) (type))
-;      (app (varr 'P)
-;           (app (lam 'x (varr 'x))
-;                (type)))))
+(define type2 (type 5))
+(define term2
+  (Pi 'P (Pi '_ (type 4) (type 4))
+      (neutral (app (varr 0)
+                    (type 3)))))
+;; Should give: (Pi 'P (Pi '_ (type 4) (type 4)) (app (varr 0) (type 3))))
 
-;(define type3
-;  (Pi 'T (type)
-;      (Pi '_ (varr 'T) (varr 'T))))
-;(define term3
-;  (lam 'T (lam 't (varr 't))))
+(define type3
+  (Pi 'T (type 5)
+      (Pi '_ (neutral (varr 0)) (neutral (varr 1)))))
+(define term3
+  (lam (lam (neutral (varr 0)))))
 
-;(define type4
-;  (Pi 'P (Pi '_ (type) (type))
-;      (Pi 'T (type)
-;          (Pi '_
-;              (app (varr 'P) (varr 'T))
-;              (app (varr 'P) (varr 'T))))))
-;(define term4
-;  (lam 'P (lam 'T (lam 'x (varr 'x)))))
+(define type4
+  (Pi 'P (Pi '_ (type 5) (type 5))
+      (Pi 'T (type 5)
+          (Pi '_
+              (neutral (app (varr 1) (neutral (varr 0))))
+              (neutral (app (varr 2) (neutral (varr 1))))))))
+(define term4
+  (lam (lam (lam (neutral (varr 0))))))
 
-;(define type5
-;  (Pi '_ (type) (type)))
-;(define term5
-;  (lam 'x (varr 'x)))
-
+(define type5
+  (Pi 'T (type 5)
+      (Pi '_ (neutral (varr 0))
+          (Pi '_ (neutral (varr 1))
+              (neutral (varr 2))))))
+(define term5
+  (lam (lam (lam (neutral (varr 1))))))
 
