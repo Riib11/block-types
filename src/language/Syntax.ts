@@ -24,7 +24,7 @@ export type Neu
   | {case: "app", app: Neu, arg: Term}
 ;
 
-export type Id = string;
+export type Id = {lbl: string};
 export type Var = number; // natural number
 export type Lvl = number; // natural number
 
@@ -62,7 +62,7 @@ export function getHoleIds(p: Prgm): HoleId[] {
       case "pi": go(a.dom); go(a.bod); return;
       case "lam": go(a.bod); return;
       case "neu": goNeu(a.neu); return;
-      case "let": go(a.arg); go(a.bod); return;
+      case "let": go(a.dom); go(a.arg); go(a.bod); return;
       case "hol": ids.push(a.id); return;
     }
   }
@@ -70,4 +70,17 @@ export function getHoleIds(p: Prgm): HoleId[] {
     case "jud": go(p.term); go(p.type); break;
   }
   return ids;
+}
+
+// Ids
+
+export function renameId(p: Prgm, id: Id, lbl: string): void {
+  // function go(a: Term): void {
+  //   switch (a.case) {
+  //     case "uni": return;
+  //     case "pi": {
+  //       if (a.id === id) 
+  //     }
+  //   }
+  // }
 }

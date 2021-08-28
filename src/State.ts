@@ -1,4 +1,5 @@
-import { HoleId, Neu, Prgm, Term } from "./language/Syntax";
+import { assert } from "console";
+import { getHoleIds, HoleId, Id, Neu, Prgm, renameId, Term } from "./language/Syntax";
 
 export type State = {
   p: Prgm, // current program
@@ -8,22 +9,37 @@ export type State = {
 export type Trans
   = {case: "fill", id: HoleId, term: Term}
   | {case: "select", id: HoleId}
+  | {case: "rename", id: Id, lbl: string}
 ;
 
 export function update(state: State, trans: Trans): State {
   switch (trans.case) {
     case "fill": {
-      console.log(`update: fill hole ${trans.id.ix} with ${trans.term.case}`)
-      return {
-        p: fillHole(state.p, trans.id, trans.term),
-        id: undefined
-      }
+      if (state.id !== undefined) {
+        console.log(`update: fill hole ${trans.id.ix} with ${trans.term.case}`)
+        let holeIx = getHoleIds(state.p).indexOf(state.id);
+        let p = fillHole(state.p, trans.id, trans.term);
+        let holeIds = getHoleIds(p);
+        let id = holeIds.length !== 0 ? holeIds[holeIx] : undefined;
+        return {
+          p,
+          id
+        }
+      } else return state;
     }
     case "select": {
       console.log(`update: select hole ${trans.id.ix}`);
       return {
         p: state.p,
         id: trans.id
+      }
+    }
+    case "rename": {
+      console.log(`rename: from ${trans.id.lbl} to ${trans.lbl}`);
+      trans.id.lbl = trans.lbl;
+      return {
+        p: state.p,
+        id: undefined
       }
     }
   }

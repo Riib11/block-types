@@ -5,6 +5,8 @@
   padding: 0;
 }
 
+/* App */
+
 .App {
   position: fixed;
   left: 0;
@@ -13,27 +15,35 @@
   font-size: 12pt;
 }
 
+/* Display */
+
 .display {
   position: fixed;
-  width: calc(50vw - 20px);
+  width: calc(100vw - 420px);
   height: 100%;
   padding: 10px;
+  overflow: scroll;
+  white-space: nowrap;
 
   font-family: "Courier New", Courier, monospace;
   box-shadow: -1px 0 0 0 black inset;
 }
 
+/* Panel */
+
 .panel {
   position: fixed;
-  width: calc(50vw - 20px);
+  width: 380px;
   height: 100%;
   padding: 10px;
-  margin-left: 50vw;
+  margin-left: calc(100vw - 400px);
 }
 
 .panel > div {
   margin-bottom: 20px;
 }
+
+/* Environment */
 
 .environment {
   padding: 5px;
@@ -42,13 +52,19 @@
   box-shadow: 0 0 0 1px black inset;
 }
 
+/* Context */
+
 .context {
   font-family: "Courier New", Courier, monospace;
 }
 
+/* Goal */
+
 .goal {
   font-family: "Courier New", Courier, monospace;
 }
+
+/* Palette */
 
 .palette {
 }
@@ -63,19 +79,27 @@
 }
 
 .palette-item:hover {
-  background-color: rgb(196, 196, 196);
+  /* background-color: rgb(196, 196, 196); */
+  background-color: green;
+  color: white;
 }
 
-/* Syntax */
+/* Program */
 
 .prgm {
+  vertical-align: text-top;
 }
 .prgm.jud {
 }
 
+/* Term */
+
 .term {
+  vertical-align: text-top;
 }
 .term.uni {
+}
+.term.uni.lvl {
 }
 .term.pi {
 }
@@ -89,13 +113,84 @@
 }
 .term.let {
 }
+.term.let.head {
+}
+.term.let.tail {
+  display: inline-block;
+}
 .term.hol {
 }
+.term.id {
+  min-width: 1ch;
+  box-shadow: 0 -4px 0 0 rgb(208, 206, 164) inset;
+}
+.term.id.input {
+  display: inline-block;
+  outline: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+/* HoleId */
 
 .holeId.unfocussed {
   cursor: pointer;
-  background-color: rgb(165, 157, 255);
+  box-shadow: 0 0 4px 1px blue inset;
+  padding: 0 2px;
 }
 .holeId.focussed {
-  background-color: rgb(127, 254, 209);
+  background-color: green;
+  box-shadow: 0 0 4px 0 green;
+  color: white;
+  padding: 0 2px;
+}
+
+/* Parentheses */
+
+.term > .syn.paren.left:hover,
+.term > .syn.paren.left:hover ~ .syn.paren.right {
+  background-color: red;
+  color: white;
+}
+
+/* Syntax */
+
+.syn.paren {
+  font-weight: bold;
+}
+.syn.col {
+  font-weight: bold;
+}
+.syn.dot {
+  font-weight: bold;
+}
+.syn.eq {
+  font-weight: bold;
+}
+.syn.let {
+  font-weight: bold;
+}
+.syn.pi {
+  font-weight: bold;
+}
+.syn.lam {
+  font-weight: bold;
+}
+.syn.uni {
+  font-weight: bold;
+}
+.syn.in {
+  font-weight: bold;
+}
+
+/* Console */
+
+.console {
+  padding: 5px;
+
+  font-family: "Courier New", Courier, monospace;
+  box-shadow: 0 0 0 1px black inset;
 }

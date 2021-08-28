@@ -32,6 +32,19 @@ export default class App extends React.Component<Props, State> {
           ix = (holeIds.length + (evt.key === "ArrowLeft" ? ix - 1 : ix + 1)) % holeIds.length;
           let state = update(app.state, {case: "select", id: holeIds[ix]});
           app.setState(state);
+        } else
+        if (["u", "p", "l", "="].includes(evt.key)) {
+          let term: Term | undefined;
+          switch (evt.key) {
+            case "u": term = {case: "uni", lvl: 0}; break;
+            case "p": term = {case: "pi", id: {lbl: "x"}, dom: freshHole(), bod: freshHole()}; break;
+            case "l": term = {case: "lam", bod: freshHole()}; break;
+            case "n": term = {case: "neu", neu: {case: "app", app: {case: "var", var: 0}, arg: freshHole()}}; break;
+            case "=": term = {case: "let", id: {lbl: "x"}, dom: freshHole(), arg: freshHole(), bod: freshHole()}; break;
+            default: break;
+          }
+          if (term !== undefined)
+            app.setState(update(app.state, {case: "fill", id: app.state.id, term}));
         }
       } else {
         // select first or last hole
@@ -64,12 +77,21 @@ export default class App extends React.Component<Props, State> {
   }
 
   renderPanel(): JSX.Element {
-    return (
-      <div className="panel">
-        {this.renderEnvironment()}
-        {this.renderPalette()}
-      </div>
-    )
+    if (this.state.id !== undefined) {
+      return (
+        <div className="panel">
+          {this.renderEnvironment()}
+          {this.renderPalette()}
+          {this.renderConsole()}
+        </div>
+      );
+    } else {
+      return (
+        <div className="panel">
+          {this.renderConsole()}
+        </div>
+      );
+    }
   }
 
   renderEnvironment(): JSX.Element {
@@ -99,24 +121,18 @@ export default class App extends React.Component<Props, State> {
   }
 
   renderPalette(): JSX.Element {
-    if (this.state.id !== undefined) {
-      return (
-        <div className="palette">
-          {this.renderPaletteItemFill({case: "uni", lvl: 0})}
-          {this.renderPaletteItemFill({case: "pi", id: "x", dom: freshHole(), bod: freshHole()})}
-          {this.renderPaletteItemFill({case: "lam", bod: freshHole()})}
-          {/* {this.renderPaletteItemFill({case: "app", app: 0, args: [freshHole(), freshHole()]})} */}
-          {this.renderPaletteItemFill({case: "neu", neu: {case: "app", app: {case: "var", var: 0}, arg: freshHole()}})}
-          {this.renderPaletteItemFill({case: "let", id: "x", dom: freshHole(), arg: freshHole(), bod: freshHole()})}
-        </div>
-      );
-    } else {
-      // don't render pallete when there isn't a focussed hole
-      return (<div></div>)
-    }
+    return (
+      <div className="palette">
+        {this.renderPaletteItemFill("u", {case: "uni", lvl: 0})}
+        {this.renderPaletteItemFill("p", {case: "pi", id: {lbl: "x"}, dom: freshHole(), bod: freshHole()})}
+        {this.renderPaletteItemFill("l", {case: "lam", bod: freshHole()})}
+        {this.renderPaletteItemFill("n", {case: "neu", neu: {case: "app", app: {case: "var", var: 0}, arg: freshHole()}})}
+        {this.renderPaletteItemFill("=", {case: "let", id: {lbl: "x"}, dom: freshHole(), arg: freshHole(), bod: freshHole()})}
+      </div>
+    );
   }
 
-  renderPaletteItemFill(t: Term): JSX.Element {
+  renderPaletteItemFill(k: string, t: Term): JSX.Element {
     let app = this;
     let r = new Renderer(this, "palette");
     let onClick: MouseEventHandler = event => {
@@ -125,7 +141,7 @@ export default class App extends React.Component<Props, State> {
     }
     return (
       <div className="palette-item" onClick={onClick}>
-        {r.renderTerm(t)}
+        {k}: {r.renderTerm(t)}
       </div>
     )
   }
@@ -134,6 +150,14 @@ export default class App extends React.Component<Props, State> {
     return (
       <div className="palette-item">
         dig
+      </div>
+    )
+  }
+
+  renderConsole(): JSX.Element {
+    return (
+      <div className="console">
+        console
       </div>
     )
   }
