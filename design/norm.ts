@@ -46,6 +46,14 @@ export type GSemT = any;
 # Renaming and Substitution
 */
 
+/*
+TODO: something seems weird...
+I figured I would have to do something special with the fact that this is a JS
+array, by defining some `cons` and `match` functions to treat it as if it was
+a functional cons-list (because `Array.push` and `Array.pop` will modify the
+list in place). But I never have to, which is wierd. Jacob's reference impl also
+doesn't use `cons` or match on a list ever.
+*/
 export type Ctx = GSemT[];
 
 // Ren G1 G2 = Var G1 T -> Var G2 ?T
