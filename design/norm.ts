@@ -7,7 +7,7 @@
 */
 
 // Syntactic normal form
-type Syn
+export type Syn
   = {case: "uni", lvl: Lvl} // U_i
   | {case: "lam", bod: Syn} // (λ b)
   | {case: "pi", id: Id, dom: Syn, bod: Syn} // Π x : A . B
@@ -15,20 +15,20 @@ type Syn
   | {case: "let", id: Id, dom: Syn, arg: Syn, bod: Syn} // let x : A = a in b
 ;
 // Syntactic neutral form
-type SynNe
+export type SynNe
   = {case: "var", ix: Ix} // x  (DeBruijn-index)
   | {case: "app", app: SynNe, arg: Syn} // f a
 ;
-type Lvl = number;
-type Ix = number;
-type Id = string;
+export type Lvl = number;
+export type Ix = number;
+export type Id = string;
 
 /*
 ## Semantic domain
 */
 
-type Sem = any;
-type SemT // :: Ctx -> Type -> Type
+export type Sem = any;
+export type SemT // :: Ctx -> Type -> Type
   = {case: "uni", lvl: Lvl}
   | {case: "pi", id: Id,
      dom: GSem,                     // dom: GSem G1 Type
@@ -37,16 +37,16 @@ type SemT // :: Ctx -> Type -> Type
   | {case: "ne", ne: SynNe}
 
 // GSem = ren -> Sem
-type GSem = any
+export type GSem = any
 
 // GSemT = ren -> SemT
-type GSemT = any;
+export type GSemT = any;
 
 /*
 # Renaming and Substitution
 */
 
-type Ctx = GSemT[];
+export type Ctx = GSemT[];
 
 // Ren G1 G2 = Var G1 T -> Var G2 ?T
 type Ren = (x:Ix) => Ix;
@@ -116,7 +116,7 @@ function evlNeImpl(sub: Sub, e: SynNe): GSem {
 Reflection
 */
 
-function reflect(T: SemT, e: SynNe): Sem {
+export function reflect(T: SemT, e: SynNe): Sem {
   switch (T.case) {
     case "uni": return {case: "ne", ne: e} as SemT;
     case "pi": return (a: Sem) => reflect(T.bod(idRen, a),
@@ -125,7 +125,7 @@ function reflect(T: SemT, e: SynNe): Sem {
   }
 }
 
-function reify(T: SemT, e: GSem): Syn {
+export function reify(T: SemT, e: GSem): Syn {
   switch (T.case) {
     case "uni": {
       let eT = e(idRen) as SemT;
