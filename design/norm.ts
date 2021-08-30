@@ -30,9 +30,10 @@ type Id = string;
 type Sem = any;
 type SemT // :: Ctx -> Type -> Type
   = {case: "uni", lvl: Lvl}
-  | {case: "pi", id: Id, dom: GSem, bod: (ren: Ren, e: Sem) => Sem} // Π x : A . B
-    // dom: GSem G1 Type
-    // bod: (ren: Ren G1 G2) -> Sem G2 (A ren) -> Sem G2 Type
+  | {case: "pi", id: Id,
+     dom: GSem,                     // dom: GSem G1 Type
+     bod: (ren: Ren, e: Sem) => Sem // bod: (ren: Ren G1 G2) -> Sem G2 (A ren) -> Sem G2 Type
+    } // Π x : A . B
   | {case: "ne", ne: SynNe}
 
 // GSem = ren -> Sem
@@ -78,34 +79,36 @@ function append1Sub(sub: Sub, g: GSem): Sub
 Evaluation assumes that the input term is well-typed.
 */
 
-function eval(e: Syn): Sem
-  {return evalImpl(idSub([]), e);}
+// `evl` must be named so instead of `eval` since "strict mode" (whatever that
+// means) disallows exporting a shadowing of a globally-defined name.
+export function evl(e: Syn): Sem
+  {return evlImpl(idSub([]), e);}
 
 // TODO: output was originally of type Sem, but GSem seems correct
-function evalImpl(sub: Sub, e: Syn): GSem {
+function evlImpl(sub: Sub, e: Syn): GSem {
   switch (e.case) {
-    case "lam": return (g: GSem) => evalImpl(append1Sub(sub, g), e.bod);
-    case "ne": return evalNeImpl(sub, e.ne);
+    case "lam": return (g: GSem) => evlImpl(append1Sub(sub, g), e.bod);
+    case "ne": return evlNeImpl(sub, e.ne);
     case "let": {
-      let GsemE: GSem = (ren: Ren) => evalImpl(transSR(sub, ren), e);
-      return (evalImpl(append1Sub(sub, GsemE), e.bod));
+      let GsemE: GSem = (ren: Ren) => evlImpl(transSR(sub, ren), e);
+      return (evlImpl(append1Sub(sub, GsemE), e.bod));
     }
     case "pi": {
       return ({
         case: "pi",
         id: e.id,
-        dom: (ren: Ren) => evalImpl(transSR(sub, ren), e.dom),
-        bod: (ren: Ren, a) => evalImpl(append1Sub(transSR(sub, ren), a), e.bod),
+        dom: (ren: Ren)          => evlImpl(transSR(sub, ren), e.dom),
+        bod: (ren: Ren, a: GSem) => evlImpl(append1Sub(transSR(sub, ren), a), e.bod),
       } as Sem);
     }
     case "uni": return {case: "uni", lvl: e.lvl} as Sem;
   }
 }
 
-function evalNeImpl(sub: Sub, e: SynNe): GSem {
+function evlNeImpl(sub: Sub, e: SynNe): GSem {
   switch (e.case) {
     case "var": return (sub(e.ix))(idRen) as unknown as GSem;
-    case "app": return (evalNeImpl(sub, e.app))(ren => evalImpl(transSR(sub, ren), e.arg));
+    case "app": return (evlNeImpl(sub, e.app))((ren: Ren) => evlImpl(transSR(sub, ren), e.arg));
   }
 }
 
@@ -116,7 +119,8 @@ Reflection
 function reflect(T: SemT, e: SynNe): Sem {
   switch (T.case) {
     case "uni": return {case: "ne", ne: e} as SemT;
-    case "pi": return (a: Sem) => reflect(T.bod(idRen, a), {case: "app", app: e, arg: reify(T.dom(idRen), a)})
+    case "pi": return (a: Sem) => reflect(T.bod(idRen, a),
+                                          {case: "app", app: e, arg: reify(T.dom(idRen), a)})
     case "ne": return {case: "ne", ne: e} as Syn;
   }
 }
@@ -135,8 +139,8 @@ function reify(T: SemT, e: GSem): Syn {
             id: eT.id,
             dom: reify({case: "uni", lvl: T.lvl}, eT.dom),
             bod: reify({case: "uni", lvl: T.lvl}, 
-                  (ren1: Ren) => B(forget1Ren(ren1), 
-                  (ren2: Ren) => reflect(A(transRR(forget1Ren(ren1), ren2)), {case: "var", ix: ren2(0)})))
+                       (ren1: Ren) => B(forget1Ren(ren1),
+                       (ren2: Ren) => reflect(A(transRR(forget1Ren(ren1), ren2)), {case: "var", ix: ren2(0)})))
           };
         }
       }
@@ -148,8 +152,9 @@ function reify(T: SemT, e: GSem): Syn {
       return {
         case: "lam",
         bod: reify(B(weaken1Ren, (ren: Ren) => reflect(A(forget1Ren(ren)), {case: "var", ix: ren(0)})),
-              (ren1: Ren) => e(forget1Ren(ren1))(
-              (ren2: Ren) => reflect(A(transRR(forget1Ren(ren1), ren2)), {case: "var", ix: ren2(ren1(0))})))
+                   (ren1: Ren) => e(forget1Ren(ren1))
+                                   ((ren2: Ren) => reflect(A(transRR(forget1Ren(ren1), ren2)),
+                                                           {case: "var", ix: ren2(ren1(0))})))
       };
     }
     case "ne": return e(idRen);
@@ -160,6 +165,6 @@ function reify(T: SemT, e: GSem): Syn {
 # Normalization
 */
 
-function norm(T: Syn, e: Syn): Syn
-  {return reify(eval(T), (ren: Ren) => evalImpl(transSR(idSub([]), ren), e));}
+export function norm(T: Syn, e: Syn): Syn
+  {return reify(evl(T), (ren: Ren) => evlImpl(transSR(idSub([]), ren), e));}
 
