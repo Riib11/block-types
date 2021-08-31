@@ -1,9 +1,10 @@
-import { Id, Lvl, Term, TermNe, Var } from "./Syntax";
+import { Id, Lvl, Term, TermNe, TermUni, Var } from "./Syntax";
 
 /*
 ## Syntactic domain
 */
 
+type SynUni = TermUni;
 type Syn = Term;
 type SynNe = TermNe;
 
@@ -13,7 +14,7 @@ type SynNe = TermNe;
 
 export type Sem = SemT | ((g: GSem) => Sem) | Syn;
 export type SemT // :: Ctx -> Type -> Type
-  = {case: "uni", lvl: Lvl}
+  = SynUni
   | {case: "pi", 
       id: Id,
       dom: GSem,                      // dom: GSem G1 Type
@@ -123,7 +124,7 @@ export function reify(T: SemT, e: GSem): Syn {
                        (ren2: Ren) => reflect(A(transRR(forget1Ren(ren1), ren2)) as SemT, {case: "var", var: ren2(0)})))
           };
         }
-        case "app": return eT;
+        case "app":
         case "var": return eT;
       }
       break;
@@ -148,7 +149,7 @@ export function reify(T: SemT, e: GSem): Syn {
 */
 
 export function norm(T: Syn, e: Syn): Syn
-  {return reify(evl(T) as SemT, (ren: Ren) => evlImpl(transSR(idSub([]), ren), e));}
+  {return reify(evl(T) as SemT, (ren: Ren) => evlImpl(transSR(idSub([]), ren), e))}
 
 
 /*
