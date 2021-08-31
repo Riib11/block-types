@@ -1,5 +1,5 @@
 import { assert } from "console";
-import { getHoleIds, HoleId, Id, Neu, Prgm, renameId, Term } from "./language/Syntax";
+import { getHoleIds, HoleId, Id, Prgm, renameId, Term, TermNe } from "./language/Syntax";
 
 export type State = {
   p: Prgm, // current program
@@ -46,10 +46,10 @@ export function update(state: State, trans: Trans): State {
 }
 
 export function fillHole(p: Prgm, id: HoleId, a: Term): Prgm {
-  function goNeu(neu: Neu): Neu {
-    switch (neu.case) {
-      case "var": return neu;
-      case "app": return {case: "app", app: goNeu(neu.app), arg: goTerm(neu.arg)};
+  function goTermNe(t: TermNe): TermNe {
+    switch (t.case) {
+      case "var": return t;
+      case "app": return {case: "app", app: goTermNe(t.app), arg: goTerm(t.arg)};
     }
   }
   function goTerm(t: Term): Term {
@@ -57,9 +57,10 @@ export function fillHole(p: Prgm, id: HoleId, a: Term): Prgm {
       case "uni": return t;
       case "pi": return {case: "pi", id: t.id, dom: goTerm(t.dom), bod: goTerm(t.bod)};
       case "lam": return {case: "lam", bod: goTerm(t.bod)};
-      case "neu": return {case: "neu", neu: goNeu(t.neu)};
       case "let": return {case: "let", id: t.id, dom: goTerm(t.dom), arg: goTerm(t.arg), bod: goTerm(t.bod)};
       case "hol": return (t.id === id)? a : t;
+      case "app":
+      case "var": return goTermNe(t)
     }
   }
   switch (p.case) {

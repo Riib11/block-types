@@ -1,8 +1,9 @@
 import React, { MouseEventHandler } from 'react';
 import { KeyboardEventHandler } from 'react';
 import './App.css';
+import * as Nm from './language/Normalization';
 import { Renderer } from './language/Renderer';
-import { emptyData, freshHole, getHoleIds, HoleId, Term } from './language/Syntax';
+import { emptyData, freshHole, getHoleIds, HoleId, showTerm, Term } from './language/Syntax';
 import { Props } from './Props';
 import { State, update } from './State';
 
@@ -39,7 +40,7 @@ export default class App extends React.Component<Props, State> {
             case "u": term = {case: "uni", lvl: 0}; break;
             case "p": term = {case: "pi", id: {lbl: "x"}, dom: freshHole(), bod: freshHole()}; break;
             case "l": term = {case: "lam", bod: freshHole()}; break;
-            case "n": term = {case: "neu", neu: {case: "app", app: {case: "var", var: 0}, arg: freshHole()}}; break;
+            case "n": term = {case: "app", app: {case: "var", var: 0}, arg: freshHole()}; break;
             case "=": term = {case: "let", id: {lbl: "x"}, dom: freshHole(), arg: freshHole(), bod: freshHole()}; break;
             default: break;
           }
@@ -65,6 +66,24 @@ export default class App extends React.Component<Props, State> {
         {this.renderPanel()}
       </div>
     );
+    // return (
+    //   <div>
+    //     {this.renderExample(Nm.example1)}
+    //     {this.renderExample(Nm.example2)}
+    //     {this.renderExample(Nm.example3)}
+    //     {this.renderExample(Nm.example4)}
+    //     {this.renderExample(Nm.example5)}
+    //     {this.renderExample(Nm.example6)}
+    //   </div>
+    // );
+  }
+
+  renderExample(example: Nm.Example) {
+    return (
+      <div>
+        {showTerm(example.term)} ~&gt; {showTerm(example.result)} : {showTerm(example.type)}
+      </div>
+    )
   }
 
   renderDisplay(): JSX.Element {
@@ -126,7 +145,7 @@ export default class App extends React.Component<Props, State> {
         {this.renderPaletteItemFill("u", {case: "uni", lvl: 0})}
         {this.renderPaletteItemFill("p", {case: "pi", id: {lbl: "x"}, dom: freshHole(), bod: freshHole()})}
         {this.renderPaletteItemFill("l", {case: "lam", bod: freshHole()})}
-        {this.renderPaletteItemFill("n", {case: "neu", neu: {case: "app", app: {case: "var", var: 0}, arg: freshHole()}})}
+        {this.renderPaletteItemFill("n", {case: "app", app: {case: "var", var: 0}, arg: freshHole()})}
         {this.renderPaletteItemFill("=", {case: "let", id: {lbl: "x"}, dom: freshHole(), arg: freshHole(), bod: freshHole()})}
       </div>
     );

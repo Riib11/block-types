@@ -2,7 +2,7 @@ import { ChangeEventHandler } from "react";
 import { MouseEventHandler } from "react";
 import App from "../App";
 import { update } from "../State";
-import { HoleId, Id, Neu, Prgm, Term, Var } from "./Syntax";
+import { HoleId, Id, Prgm, Term, TermNe, Var } from "./Syntax";
 
 export type Mode = "display" | "palette";
 
@@ -45,7 +45,8 @@ export class Renderer {
         return (<span className="term pi">{synParL}{synPi} {this.renderId(t.id, true)} {synCol} {this.renderTerm(t.dom, [t, 0])} {synDot} {this.renderTerm(t.bod, [t, 1])}{synParR}</span>);
       }
       case "lam": return (<span className="term lam">{synParL}{synLam} {this.renderTerm(t.bod, [t, 0])}{synParR}</span>);
-      case "neu": return (<span className="term neu">{synParL}{this.renderNeu(t.neu, [t, 0])}{synParR}</span>);
+      case "app":
+      case "var": return (<span className="term neu">{synParL}{this.renderTermNe(t, [t, 0])}{synParR}</span>);
       case "let": {
         switch (parent?.[0].case) {
           default:    return (           <span className="term let">{synParL}{synLet} {this.renderId(t.id, true)} {synCol} {this.renderTerm(t.dom, [t, 0])} {synEq} {this.renderTerm(t.arg, [t, 1])} {synIn} {this.renderTerm(t.bod, [t, 2])}{synParR}</span>);
@@ -56,10 +57,10 @@ export class Renderer {
     }
   }
 
-  renderNeu(neu: Neu, parent?: [Term, number]): JSX.Element {
-    switch (neu.case) {
-      case "var": return (<span className="term var">{this.renderVar(neu.var)}</span>);
-      case "app": return (<span className="term app">{this.renderNeu(neu.app, [{case: "neu", neu}, 0])} {this.renderTerm(neu.arg, [{case: "neu", neu}, 1])}</span>);
+  renderTermNe(t: TermNe, parent?: [Term, number]): JSX.Element {
+    switch (t.case) {
+      case "var": return (<span className="term var">{this.renderVar(t.var)}</span>);
+      case "app": return (<span className="term app">{this.renderTermNe(t.app, [t, 0])} {this.renderTerm(t.arg, [t, 1])}</span>);
     }
   }
 
