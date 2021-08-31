@@ -75,7 +75,7 @@ function evlImpl(sub: Sub, e: Syn): Sem {
     case "lam": return (g: GSem) => evlImpl(append1Sub(sub, g), e.bod);
     case "let": {
       let GsemE: GSem = (ren: Ren) => evlImpl(transSR(sub, ren), e.arg);
-      return (evlImpl(append1Sub(sub, GsemE), e.bod));
+      return evlImpl(append1Sub(sub, GsemE), e.bod);
     }
     case "pi": {
       return ({
