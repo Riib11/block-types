@@ -1,5 +1,5 @@
 /*
-# Normalization by evaluation for the simply-typed λ-calculus.
+# Normalization by evaluation for the simply-typed λ-calculus with named variables.
 */
 
 import { insert, lookup, nil, PMap } from "../data/PMap";
@@ -100,7 +100,7 @@ function evlImpl(t: Term, G: Ctx): Sem {
 ## Reflection
 */
 
-function rfl(T: Type, t: Term) {
+function rfl(T: Type, t: Term): Sem {
   switch (T.case) {
     case "unit": return t;
     case "arr": return (s: Sem) => rfl(T.cod, {case: "app", app: t as TermNe, arg: rfy(T.dom, s)});
