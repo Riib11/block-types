@@ -15,6 +15,7 @@ type Term
   | {case: "lam", id: Id, bod: Term}
   | {case: "pi", id: Id, dom: Term, bod: Term}
   | {case: "let", id: Id, dom: Term, arg: Term, bod: Term}
+  | {case: "hole", id: HoleId}
   | TermNe
 ;
 type TermNe
@@ -26,6 +27,7 @@ type Lvl = number;
 
 type Ix = number; // DeBruijn level
 type Id = string;
+type HoleId = {};
 
 function showTerm(t: Term): string {
   switch (t.case) {
@@ -33,6 +35,7 @@ function showTerm(t: Term): string {
     case "lam": return `(λ ${showId(t.id)} . ${showTerm(t.bod)})`;
     case "pi": return `(Π ${showId(t.id)} : ${showTerm(t.dom)} . ${showTerm(t.bod)})`;
     case "let": return `(let ${showId(t.id)} : ${showTerm(t.dom)} = ${showTerm(t.arg)} in ${showTerm(t.bod)})`;
+    case "hole": return "?";
     case "app":
     case "var": return showTermNe(t);
   }
@@ -62,6 +65,7 @@ type Sem = SemT | ((s: Sem) => Sem) | Term;
 type SemT
   = {case: "uni", lvl: Lvl}
   | {case: "pi", id: Id, dom: Sem, bod: (s: Sem) => Sem}
+  | {case: "hole", id: HoleId}
   | TermNe
 ;
 
@@ -88,11 +92,9 @@ function evlImpl(t: Term, G: Ctx): Sem {
       dom: evlImpl(t.dom, G),
       bod: (s: Sem) => evlImpl(t.bod, cons(s, G))
     }
-    case "var": {
-      console.log(showPList(G, (s: Sem) => typeof(s)));
-      return atRev(t.ix, G);
-    }
     case "let": return evlImpl(t.bod, cons(evlImpl(t.arg, G), G));
+    case "hole": return t;
+    case "var": return atRev(t.ix, G);
     case "app": return (evlImpl(t.app, G) as (s: Sem) => Sem)(evlImpl(t.arg, G));
   }
 }
@@ -108,6 +110,7 @@ function rfl(T: SemT, t: TermNe, d: number): Sem {
     case "pi": return (s: Sem) =>
                 rfl(T.bod(s) as SemT, 
                     {case: "app", app: t, arg: rfy(T.dom as SemT, s, d)}, d + 1);
+    case "hole": return t;
     case "app":
     case "var": return t;
   }
@@ -123,7 +126,7 @@ function rfy(T: SemT, t: Sem, d: number): Term {
     case "uni": {
       let tT: SemT = t as SemT;
       switch (tT.case) {
-        case "uni": return {case: "uni", lvl: tT.lvl};
+        case "uni": return tT;
         case "pi": {
           let A: Sem = tT.dom;
           let B: (s: Sem) => Sem = tT.bod;
@@ -134,6 +137,7 @@ function rfy(T: SemT, t: Sem, d: number): Term {
             bod: rfy({case: "uni", lvl: T.lvl}, B(rfl(A as SemT, {case: "var", ix: d}, d + 1)), d)
           };
         }
+        case "hole": return tT;
         case "app":
         case "var": return tT;
       }
@@ -150,6 +154,7 @@ function rfy(T: SemT, t: Sem, d: number): Term {
                  d)
       }
     }
+    case "hole": return t as Term; // TODO: why must be a term?
     case "app":
     case "var": return t as Term;
   }
@@ -160,7 +165,7 @@ function rfy(T: SemT, t: Sem, d: number): Term {
 */
 
 export function nrm(T: Term, t: Term): Term
-  {return rfy(evl(T) as SemT, evlImpl(t, nil()), 0)}
+  {return rfy(evl(T) as SemT, evl(t), 0)}
 
 /*
 ## Examples
@@ -184,5 +189,28 @@ export function nrm(T: Term, t: Term): Term
       bod: {case: "var", ix: 1}
     }
   };
+  console.log(`${showTerm(t)} ~> ${showTerm(nrm(T, t))} : ${showTerm(T)}`);
+}
+
+{
+  /*
+  expl: * -> *
+  expl: λ x . let y : * = x in ?
+  soln: λ x . ?
+  */
+  let T: Term = {case: "pi", id: "A", dom: {case: "uni", lvl: 0}, bod: {case: "uni", lvl: 0}};
+  let t: Term = {
+    case: "lam",
+    id: "A", // 0
+    bod: {
+      case: "let",
+      id: "B", // 1
+      dom: {case: "uni", lvl: 0},
+      arg: {case: "var", ix: 0},
+      bod: {case: "hole", id: {}}
+    }
+  };
+  // console.log(evl(T));
+  // console.log(evl(t));
   console.log(`${showTerm(t)} ~> ${showTerm(nrm(T, t))} : ${showTerm(T)}`);
 }
