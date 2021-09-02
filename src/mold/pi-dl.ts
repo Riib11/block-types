@@ -118,7 +118,7 @@ TODO: should the HoleShape store the type as a SemTyp or a Syn??
 type HoleCtx = PList.PList<SemTyp>;
 type HoleShape = [SemTyp, HoleCtx];
 
-function pour(T: SemTyp, t: Sem): Map<HoleId, HoleShape> {
+function mold(T: SemTyp, t: Sem): Map<HoleId, HoleShape> {
   let shapes: Map<HoleId, HoleShape> = new Map();
 
   function goSem(T: SemTyp, t: Sem, ctx: HoleCtx = PList.nil(), dbl: Dbl = 0): void {
