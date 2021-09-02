@@ -81,7 +81,7 @@ function reify(T: SemTyp, t: Sem, dbl: Dbl = 0): Syn {
           case: "pie",
           id: tTyp.id,
           dom: reify({case: "uni", lvl: T.lvl}, tTyp.dom, dbl),
-          bod: reify({case: "uni", lvl: T.lvl}, tTyp.bod(reflect(tTyp.dom, {case: "var", dbl}, dbl + 1)), dbl)
+          bod: reify({case: "uni", lvl: T.lvl}, tTyp.bod(reflect(tTyp.dom, {case: "var", dbl}, dbl + 1)), dbl + 1)
         }
         case "hol": 
         case "app":
@@ -128,9 +128,13 @@ function mold(T: SemTyp, t: Sem): Map<HoleId, HoleShape> {
         switch (tTyp.case) {
           case "uni": return;
           case "pie": {
-            let bodTyp: SemTyp = tTyp.bod(reflect(tTyp.dom, {case: "var", dbl}, dbl)) as SemTyp;
             goSem(T, tTyp.dom, ctx, dbl);
-            goSem(T, bodTyp, PList.cons(tTyp.dom, ctx), dbl + 1); 
+            goSem(
+              T,
+              tTyp.bod(reflect(tTyp.dom, {case: "var", dbl}, dbl + 1)) as SemTyp,
+              PList.cons(tTyp.dom, ctx),
+              dbl + 1
+            ); 
             return;
           }
           case "app": goApp(tTyp, ctx, dbl); return;
