@@ -1,5 +1,4 @@
-import { assert } from "console";
-import { getHoleIds, HoleId, Id, Prgm, renameId, Term, TermNe } from "./language/Syntax";
+import { getHoleIds, HoleId, Id, Prgm, renameId, Syn, SynNeu } from "./language/Syntax";
 
 export type State = {
   p: Prgm, // current program
@@ -7,7 +6,7 @@ export type State = {
 };
 
 export type Trans
-  = {case: "fill", id: HoleId, term: Term}
+  = {case: "fill", id: HoleId, t: Syn}
   | {case: "select", id: HoleId}
   | {case: "rename", id: Id, lbl: string}
 ;
@@ -16,9 +15,9 @@ export function update(state: State, trans: Trans): State {
   switch (trans.case) {
     case "fill": {
       if (state.id !== undefined) {
-        console.log(`update: fill hole ${trans.id.ix} with ${trans.term.case}`)
+        console.log(`update: fill hole ${trans.id.uid} with ${trans.t.case}`)
         let holeIx = getHoleIds(state.p).indexOf(state.id);
-        let p = fillHole(state.p, trans.id, trans.term);
+        let p = fillHole(state.p, trans.id, trans.t);
         let holeIds = getHoleIds(p);
         let id = holeIds.length !== 0 ? holeIds[holeIx] : undefined;
         return {
@@ -28,7 +27,7 @@ export function update(state: State, trans: Trans): State {
       } else return state;
     }
     case "select": {
-      console.log(`update: select hole ${trans.id.ix}`);
+      console.log(`update: select hole ${trans.id.uid}`);
       return {
         p: state.p,
         id: trans.id
@@ -45,25 +44,25 @@ export function update(state: State, trans: Trans): State {
   }
 }
 
-export function fillHole(p: Prgm, id: HoleId, a: Term): Prgm {
-  function goTermNe(t: TermNe): TermNe {
+export function fillHole(p: Prgm, id: HoleId, a: Syn): Prgm {
+  function goSynNeu(t: SynNeu): SynNeu {
     switch (t.case) {
       case "var": return t;
-      case "app": return {case: "app", app: goTermNe(t.app), arg: goTerm(t.arg)};
+      case "app": return {case: "app", app: goSynNeu(t.app), arg: goSyn(t.arg)};
     }
   }
-  function goTerm(t: Term): Term {
+  function goSyn(t: Syn): Syn {
     switch (t.case) {
       case "uni": return t;
-      case "pi": return {case: "pi", id: t.id, dom: goTerm(t.dom), bod: goTerm(t.bod)};
-      case "lam": return {case: "lam", bod: goTerm(t.bod)};
-      case "let": return {case: "let", id: t.id, dom: goTerm(t.dom), arg: goTerm(t.arg), bod: goTerm(t.bod)};
+      case "pie": return {case: "pie", id: t.id, dom: goSyn(t.dom), cod: goSyn(t.cod)};
+      case "lam": return {case: "lam", id: t.id, bod: goSyn(t.bod)};
+      case "let": return {case: "let", id: t.id, dom: goSyn(t.dom), arg: goSyn(t.arg), bod: goSyn(t.bod)};
       case "hol": return (t.id === id)? a : t;
       case "app":
-      case "var": return goTermNe(t)
+      case "var": return goSynNeu(t)
     }
   }
   switch (p.case) {
-    case "jud": return {case: "jud", term: goTerm(p.term), type: goTerm(p.type)};
+    case "jud": return {case: "jud", t: goSyn(p.t), T: goSyn(p.T)};
   }
 }

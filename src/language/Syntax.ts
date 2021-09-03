@@ -1,70 +1,78 @@
-// Program
+/*
+# Syntax
+*/
+
+import { atRev, cons, nil, PList } from "../data/PList";
+
+/*
+## Program
+*/
 
 export type Prgm
-  = {case: "jud", term: Term, type: Term} // judgement
+  = {case: "jud", t: Syn, T: Syn} // judgement
 
-// Term
+  /*
+## Syntactic domain
+*/
 
-export type Term = TermUni | TermPi | TermLam | TermLet | TermNe | TermHol
-export type TermNe = TermApp | TermVar
-export type Type = TermUni | TermPi | TermLam | TermNe | TermHol // Term w/o let-term
+export type Syn = SynUni | SynPie | SynLam | SynNeu | SynLet | SynHol;
+//------------------------------------------------------------------------------
+export type SynNeu = SynApp | SynVar // neutral
+export type SynUni = {case: "uni", lvl: Level}; // universe
+export type SynPie = {case: "pie", id: Id, dom: Syn, cod: Syn}; // Π
+export type SynLam = {case: "lam", id: Id, bod: Syn}; // λ
+export type SynApp = {case: "app", app: SynNeu, arg: Syn}; // application
+export type SynVar = {case: "var", dbl: Dbl}; // variable
+export type SynLet = {case: "let", id: Id, dom: Syn, arg: Syn, bod: Syn}; // let
+export type SynHol = {case: "hol", id: HoleId}; // ?
 
-export type TermUni = {case: "uni", lvl: Lvl, dat?: Data}; // universe
-export type TermPi  = {case: "pi",  id: Id, dom: Term, bod: Term, dat?: Data}; // Π
-export type TermLam = {case: "lam", bod: Term, dat?: Data}; // λ
-export type TermLet = {case: "let", id: Id, dom: Term, arg: Term, bod: Term, dat?: Data}; // let
-export type TermHol = {case: "hol", id: HoleId, dat?: Data}; // hole
-export type TermApp = {case: "app", app: TermNe, arg: Term}; // f a (DeBruijn indexed)
-export type TermVar = {case: "var", var: Var}; // x 
+export type Level = number; // level
+export type Id = {lbl: string}; // identifier
+export type Dbl = number; // DeBruijn level
+export type HoleId = {uid: number};
 
-export type Id = {lbl: string};
-export type Var = number; // natural number
-export type Lvl = number; // natural number
-
-export function showTerm(t: Term): string {
+export function showSyn(t: Syn, ctx: PList<Id> = nil()): string {
   switch (t.case) {
     case "uni": return `U${t.lvl}`;
-    case "pi": return `(Π ${t.id} : ${showTerm(t.dom)} . ${showTerm(t.bod)})`;
-    case "lam": return `(λ ${showTerm(t.bod)})`;
-    case "let": return `let ${t.id} : ${showTerm(t.dom)} = ${showTerm(t.arg)} in ${showTerm(t.bod)}`;
-    case "app": return `${showTerm(t.app)} ${showTerm(t.arg)}`;
-    case "var": return t.var.toString();
-    case "hol": return "?";
+    case "pie": return `Π ${t.id} : ${showSyn(t.dom, cons(t.id, ctx))} . ${showSyn(t.cod, cons(t.id, ctx))}`;
+    case "lam": return `λ ${t.id} . ${showSyn(t.bod, cons(t.id, ctx))}`;
+    case "let": return `let ${t.id} : ${showSyn(t.dom, ctx)} = ${showSyn(t.arg, ctx)} in ${showSyn(t.bod, ctx)}`;
+    case "hol": return `?`;
+    case "app": return `(${showSynNeu(t, ctx)})`;
+    case "var": return showSynNeu(t, ctx);
   }
 }
 
-// Data
-
-export type Data = {}; // TODO
-
-export function emptyData() { return {}; }
+export function showSynNeu(t: SynNeu, ctx: PList<Id>): string {
+  switch (t.case) {
+    case "app": return `${showSynNeu(t.app, ctx)} ${showSyn(t.arg, ctx)}`;
+    case "var": return `${atRev(t.dbl, ctx)}`;
+  }
+}
 
 // HoleId
-
-// Each hole id is just a unique reference to a trivial object.
-export type HoleId = {ix: number};
 
 let freshHoleIx = -1;
 export function freshHoleId(): HoleId {
   freshHoleIx++;
-  return {ix: freshHoleIx};
+  return {uid: freshHoleIx};
 }
-export function freshHole(): Term { return {case: "hol", id: freshHoleId(), dat: emptyData()} }
+export function freshHole(): Syn {return {case: "hol", id: freshHoleId()}}
 
 // HoleIds
 
 export function getHoleIds(p: Prgm): HoleId[] {
   let ids: HoleId[] = [];
-  function goNe(t: TermNe): void {
+  function goNe(t: SynNeu): void {
     switch(t.case) {
       case "var": return;
       case "app": goNe(t.app); go(t.arg); return;
     }
   }
-  function go(t: Term): void {
+  function go(t: Syn): void {
     switch (t.case) {
       case "uni": return;
-      case "pi": go(t.dom); go(t.bod); return;
+      case "pie": go(t.dom); go(t.cod); return;
       case "lam": go(t.bod); return;
       case "let": go(t.dom); go(t.arg); go(t.bod); return;
       case "hol": ids.push(t.id); return;
@@ -73,7 +81,7 @@ export function getHoleIds(p: Prgm): HoleId[] {
     }
   }
   switch (p.case) {
-    case "jud": go(p.term); go(p.type); break;
+    case "jud": go(p.t); go(p.T); break;
   }
   return ids;
 }
@@ -81,7 +89,7 @@ export function getHoleIds(p: Prgm): HoleId[] {
 // Ids
 
 export function renameId(p: Prgm, id: Id, lbl: string): void {
-  // function go(a: Term): void {
+  // function go(a: Syn): void {
   //   switch (t.case) {
   //     case "uni": return;
   //     case "pi": {

@@ -1,334 +1,285 @@
-import { Id, Lvl, Term, TermNe, TermUni, Var } from "./Syntax";
-
 /*
-## Syntactic domain
+# Normalization by evaluation
 */
 
-type SynUni = TermUni;
-type Syn = Term;
-type SynNe = TermNe;
+import { atRev, cons, nil, PList } from "../data/PList";
+import { Sem, SemTyp } from "./Semantics";
+import { Dbl, Id, Syn, SynNeu } from "./Syntax";
 
 /*
-## Semantic domain
+## Types
 */
 
-export type Sem = SemT | ((g: GSem) => Sem) | Syn;
-export type SemT // :: Ctx -> Type -> Type
-  = SynUni
-  | {case: "pi", 
-      id: Id,
-      dom: GSem,                      // dom: GSem G1 Type
-      bod: (ren: Ren, e: GSem) => Sem // bod: (ren: Ren G1 G2) -> Sem G2 (A ren) -> Sem G2 Type
-    } // Π x : A . B
-  | SynNe
-
-// GSem = ren -> Sem
-export type GSem = (ren: Ren) => Sem
-
-// GSemT = ren -> SemT
-export type GSemT = (ren: Ren) => SemT;
+type Ctx = PList<Sem>;
 
 /*
-# Renaming and Substitution
+## Normalization
 */
 
-export type Ctx = GSemT[];
+export function normalize(T: Syn, t: Syn): Syn
+  {return reify(evaluate(T) as SemTyp, evaluate(t))}
 
-// Ren G1 G2 = Var G1 T -> Var G2 ?T
-type Ren = (x: Var) => Var;
-
-// Sub G1 G2 = Var G1 T -> GSem G2 ?T
-type Sub = (x: Var) => GSem;
-
-export const idRen: Ren = x => x;
-
-const weaken1Ren: Ren = x => x + 1;
-
-function forget1Ren(ren: Ren): Ren
-  {return x => ren(x + 1);}
-
-function idSub(ctx: Ctx): Sub
-  {return (x: Var) => (ren: Ren) => reflect(ctx[x](ren), {case: "var", var: ren(x)});}
-
-function transRR(ren1: Ren, ren2: Ren): Ren
-  {return x => ren2(ren1(x));}
-
-function transSR(sub: Sub, ren1: Ren): Sub
-  {return (x: Var) => (ren2: Ren) => sub(x)(transRR(ren1, ren2));}
-
-function append1Sub(sub: Sub, g: GSem): Sub
-  {return x => x === 0 ? g : sub(x - 1);}
+// T: syntactic type
+export function normalizeType(T: Syn): Syn
+  {return normalize({case: "uni", lvl: -1}, T)}
 
 /*
-# Evaluation
-
-Evaluation assumes that the input term is well-typed.
+## Evaluation
 */
 
-// `evl` must be named so instead of `eval` since "strict mode" (whatever that
-// means) disallows exporting a shadowing of a globally-defined name.
-export function evl(e: Syn): Sem
-  {return evlImpl(idSub([]), e);}
-
-function evlImpl(sub: Sub, e: Syn): Sem {
-  switch (e.case) {
-    case "lam": return (g: GSem) => evlImpl(append1Sub(sub, g), e.bod);
-    case "let": {
-      let GsemE: GSem = (ren: Ren) => evlImpl(transSR(sub, ren), e.arg);
-      return evlImpl(append1Sub(sub, GsemE), e.bod);
-    }
-    case "pi": {
-      return ({
-        case: "pi",
-        id: e.id,
-        dom: (ren: Ren)          => evlImpl(transSR(sub, ren), e.dom),
-        bod: (ren: Ren, a: GSem) => evlImpl(append1Sub(transSR(sub, ren), a), e.bod)
-      });
-    }
-    case "uni": return {case: "uni", lvl: e.lvl} as Sem;
-    case "app": return (evlImpl(sub, e.app) as (g: GSem) => Sem)((ren: Ren) => evlImpl(transSR(sub, ren), e.arg));
-    case "var": return (sub(e.var))(idRen);
-    case "hol": return e; // TODO: does this work?
+export function evaluate(t: Syn, ctx: Ctx = nil()): Sem {
+  switch (t.case) {
+    case "uni": return t;
+    case "pie":
+      return {
+        case: "pie",
+        id: t.id,
+        dom: evaluate(t.dom, ctx) as SemTyp,
+        cod: (a: Sem) => evaluate(t.cod, cons(a, ctx as Ctx))
+      };
+    case "lam": return (a: Sem) => evaluate(t.bod, cons(a, ctx as Ctx));
+    case "let": return evaluate(t.bod, cons(evaluate(t.arg, ctx), ctx));
+    case "hol": return t;
+    case "app": return (evaluate(t.app, ctx) as (s: Sem) => Sem)(evaluate(t.arg, ctx));
+    case "var": return atRev(t.dbl, ctx);
   }
 }
 
 /*
-Reflection
+## Reflection
 */
 
-export function reflect(T: SemT, e: SynNe): Sem {
+export function reflect(T: SemTyp, t: SynNeu, dbl: Dbl = 0): Sem {
   switch (T.case) {
-    case "uni": return e;
-    case "pi": return (a: GSem) => reflect(T.bod(idRen, a) as SemT,
-                                           {case: "app", app: e, arg: reify(T.dom(idRen) as SemT, a)})
+    case "uni": return t;
+    case "pie": return (a: Sem) => 
+      reflect(
+        T.cod(a) as SemTyp,
+        {case: "app", app: t, arg: reify(T.dom as SemTyp, a, dbl)},
+        dbl + 1
+      );
+    case "hol":
     case "app":
-    case "var": return e; 
+    case "var": return t;
   }
 }
 
-export function reify(T: SemT, e: GSem): Syn {
+/*
+## Reification
+*/
+
+export function reify(T: SemTyp, t: Sem, dbl: Dbl = 0): Syn {
   switch (T.case) {
     case "uni": {
-      let eT = e(idRen) as SemT;
-      switch (eT.case) {
-        case "uni": return {case: "uni", lvl: eT.lvl};
-        case "pi": {
-          let A: GSem = eT.dom;
-          let B: (ren: Ren, e: GSem) => Sem = eT.bod;
-          return {
-            case: "pi",
-            id: eT.id,
-            dom: reify({case: "uni", lvl: T.lvl}, eT.dom),
-            bod: reify({case: "uni", lvl: T.lvl}, 
-                       (ren1: Ren) => B(forget1Ren(ren1),
-                       (ren2: Ren) => reflect(A(transRR(forget1Ren(ren1), ren2)) as SemT, {case: "var", var: ren2(0)})))
-          };
+      let tTyp: SemTyp = t as SemTyp;
+      switch (tTyp.case) {
+        case "uni": return tTyp;
+        case "pie": return {
+          case: "pie",
+          id: tTyp.id,
+          dom: reify({case: "uni", lvl: T.lvl}, tTyp.dom, dbl),
+          cod: reify({case: "uni", lvl: T.lvl}, tTyp.cod(reflect(tTyp.dom, {case: "var", dbl}, dbl + 1)), dbl + 1)
         }
+        case "hol": 
         case "app":
-        case "var": return eT;
+        case "var": return tTyp;
       }
       break;
     }
-    case "pi": {
-      let A: GSem = T.dom;
-      let B: (ren: Ren, e: GSem) => Sem = T.bod;
-      return {
-        case: "lam",
-        bod: reify(
-              B(weaken1Ren, (ren: Ren) => reflect(A(forget1Ren(ren)) as SemT, {case: "var", var: ren(0)})) as SemT,
-              (ren1: Ren) => (e(forget1Ren(ren1)) as (g: GSem) => Sem)((ren2: Ren) => reflect(A(transRR(forget1Ren(ren1), ren2)) as SemT, {case: "var", var: ren2(ren1(0))})))
-      };
+    case "pie": return {
+      case: "lam",
+      id: T.id,
+      bod:
+        reify(
+          T.cod(reflect(T.dom, {case: "var", dbl}, dbl + 1)) as SemTyp,
+          (t as (a: Sem) => Sem)(reflect(T.dom, {case: "var", dbl}, dbl + 1))
+        )
     }
+    case "hol":
     case "app":
-    case "var": return e(idRen) as Syn;
+    case "var": return t as Syn;
   }
 }
 
-/*
-# Normalization
-*/
+// /*
+// # Examples
+// */
 
-export function norm(T: Syn, e: Syn): Syn
-  {return reify(evl(T) as SemT, (ren: Ren) => evlImpl(transSR(idSub([]), ren), e))}
+// export type Example = {
+//   type: Syn,
+//   term: Syn,
+//   result: Syn
+// }
 
+// // Example 1 (matches ref)
 
-/*
-# Examples
-*/
+// export const example1: Example = (() => {
+//   let id: Id = {lbl: "A"};
+//   let type: Syn = {
+//     case: "pie",
+//     id,
+//     dom: {case: "uni", lvl: 5}, 
+//     cod: {case: "uni", lvl: 5}
+//   };
+//   let term: Syn = {
+//     case: "lam",
+//     id, 
+//     cod: {
+//       case: "let",
+//       id: {lbl: "B"},
+//       dom: {case: "uni", lvl: 5},
+//       arg: {case: "var", dbl: 0},
+//       cod: {case: "var", dbl: 0}
+//     }
+//   };
+//   let result: Syn = norm(type, term);
+//   return {type, term, result};
+// })();
 
-export type Example = {
-  type: Syn,
-  term: Syn,
-  result: Syn
-}
+// // Example 2 (matches ref)
 
-// Example 1 (matches ref)
+// export const example2: Example = (() => {
+//   let type: Syn = {case: "uni", lvl: 5};
+//   let term: Syn = {
+//     case: "pie",
+//     id: {lbl: "P"},
+//     dom: {
+//       case: "pie",
+//       id: {lbl: " "},
+//       dom: {case: "uni", lvl: 4},
+//       cod: {case: "uni", lvl: 4}
+//     },
+//     cod: {case: "app", app: {case: "var", dbl: 0}, arg: {case: "uni", lvl: 3}}
+//   };
+//   let result: Syn = norm(type, term);
+//   return {type, term, result};
+// })();
 
-export const example1: Example = (() => {
-  let type: Syn = {
-    case: "pi",
-    id: {lbl: "A"},
-    dom: {case: "uni", lvl: 5}, 
-    bod: {case: "uni", lvl: 5}
-  };
-  let term: Syn = {
-    case: "lam",
-    bod: {
-      case: "let",
-      id: {lbl: "A"},
-      dom: {case: "uni", lvl: 5},
-      arg: {case: "var", var: 0},
-      bod: {case: "var", var: 0}
-    }
-  };
-  let result: Syn = norm(type, term);
-  return {type, term, result};
-})();
+// // Example 3 (matches ref)
 
-// Example 2 (matches ref)
+// export const example3: Example = (() => {
+//   let type: Syn = {
+//     case: "pie",
+//     id: {lbl: "T"},
+//     dom: {case: "uni", lvl: 5},
+//     cod: {
+//       case: "pie",
+//       id: {lbl: " "},
+//       dom: {case: "var", dbl: 0},
+//       cod: {case: "var", dbl: 1}
+//     }
+//   };
+//   let term: Syn = {
+//     case: "lam",
+//     cod: {
+//       case: "lam",
+//       cod: {case: "var", dbl: 0}
+//     }
+//   };
+//   let result: Syn = norm(type, term);
+//   return {type, term, result};
+// })();
 
-export const example2: Example = (() => {
-  let type: Syn = {case: "uni", lvl: 5};
-  let term: Syn = {
-    case: "pi",
-    id: {lbl: "P"},
-    dom: {
-      case: "pi",
-      id: {lbl: " "},
-      dom: {case: "uni", lvl: 4},
-      bod: {case: "uni", lvl: 4}
-    },
-    bod: {case: "app", app: {case: "var", var: 0}, arg: {case: "uni", lvl: 3}}
-  };
-  let result: Syn = norm(type, term);
-  return {type, term, result};
-})();
+// // Example 4
 
-// Example 3 (matches ref)
+// export const example4: Example = (() => {
+//   let type: Syn = {
+//     case: "pie",
+//     id: {lbl: "A"},
+//     dom: {case: "uni", lvl: 0},
+//     cod: {case: "uni", lvl: 0}
+//   };
+//   let term: Syn = {
+//     case: "lam",
+//     cod: {
+//       case: "let",
+//       id: {lbl: "A1"},
+//       dom: {case: "uni", lvl: 0},
+//       arg: {case: "var", dbl: 0},
+//       cod: {
+//         case: "let",
+//         id: {lbl: "A2"},
+//         dom: {case: "uni", lvl: 0},
+//         arg: {case: "var", dbl: 0},
+//         cod: {case: "var", dbl: 0}
+//       }
+//     }
+//   };
+//   let result: Syn = norm(type, term);
+//   return {type, term, result};
+// })();
 
-export const example3: Example = (() => {
-  let type: Syn = {
-    case: "pi",
-    id: {lbl: "T"},
-    dom: {case: "uni", lvl: 5},
-    bod: {
-      case: "pi",
-      id: {lbl: " "},
-      dom: {case: "var", var: 0},
-      bod: {case: "var", var: 1}
-    }
-  };
-  let term: Syn = {
-    case: "lam",
-    bod: {
-      case: "lam",
-      bod: {case: "var", var: 0}
-    }
-  };
-  let result: Syn = norm(type, term);
-  return {type, term, result};
-})();
+// // Example 5
 
-// Example 4
+// export const example5: Example = (() => {
+//   // Π A : U0 . Π B : U0 . U1
+//   let type: Syn = {
+//     case: "pie",
+//     id: {lbl: "A"},
+//     dom: {case: "uni", lvl: 0},
+//     cod: {
+//       case: "pie",
+//       id: {lbl: "B"},
+//       dom: {case: "uni", lvl: 0},
+//       cod: {case: "uni", lvl: 1}
+//     }
+//   };
+//   // λ A . λ B . let A' : U0 = A in
+//   //             let B' : U0 = B in
+//   //             Π x : A' . B'
+//   let term: Syn = {
+//     case: "lam",
+//     cod: {
+//       case: "lam",
+//       cod: {
+//         case: "let", // let A' : U0 = A
+//         id: {lbl: "A'"},
+//         dom: {case: "uni", lvl: 0},
+//         arg: {case: "var", dbl: 1},
+//         cod: {
+//           case: "let", // let B' : U0 = B
+//           id: {lbl: "B'"},
+//           dom: {case: "uni", lvl: 0},
+//           arg: {case: "var", dbl: 1},
+//           cod: {
+//             case: "pie", // Π x : A' . B'
+//             id: {lbl: "x"},
+//             dom: {case: "var", dbl: 1},
+//             cod: {case: "var", dbl: 1}
+//           }
+//         }
+//       }
+//     }
+//   };
+//   let result: Syn = norm(type, term);
+//   return {type, term, result};
+// })();
 
-export const example4: Example = (() => {
-  let type: Syn = {
-    case: "pi",
-    id: {lbl: "A"},
-    dom: {case: "uni", lvl: 0},
-    bod: {case: "uni", lvl: 0}
-  };
-  let term: Syn = {
-    case: "lam",
-    bod: {
-      case: "let",
-      id: {lbl: "A1"},
-      dom: {case: "uni", lvl: 0},
-      arg: {case: "var", var: 0},
-      bod: {
-        case: "let",
-        id: {lbl: "A2"},
-        dom: {case: "uni", lvl: 0},
-        arg: {case: "var", var: 0},
-        bod: {case: "var", var: 0}
-      }
-    }
-  };
-  let result: Syn = norm(type, term);
-  return {type, term, result};
-})();
+// // Example 6
 
-// Example 5
-
-export const example5: Example = (() => {
-  // Π A : U0 . Π B : U0 . U1
-  let type: Syn = {
-    case: "pi",
-    id: {lbl: "A"},
-    dom: {case: "uni", lvl: 0},
-    bod: {
-      case: "pi",
-      id: {lbl: "B"},
-      dom: {case: "uni", lvl: 0},
-      bod: {case: "uni", lvl: 1}
-    }
-  };
-  // λ A . λ B . let A' : U0 = A in
-  //             let B' : U0 = B in
-  //             Π x : A' . B'
-  let term: Syn = {
-    case: "lam",
-    bod: {
-      case: "lam",
-      bod: {
-        case: "let", // let A' : U0 = A
-        id: {lbl: "A'"},
-        dom: {case: "uni", lvl: 0},
-        arg: {case: "var", var: 1},
-        bod: {
-          case: "let", // let B' : U0 = B
-          id: {lbl: "B'"},
-          dom: {case: "uni", lvl: 0},
-          arg: {case: "var", var: 1},
-          bod: {
-            case: "pi", // Π x : A' . B'
-            id: {lbl: "x"},
-            dom: {case: "var", var: 1},
-            bod: {case: "var", var: 1}
-          }
-        }
-      }
-    }
-  };
-  let result: Syn = norm(type, term);
-  return {type, term, result};
-})();
-
-// Example 6
-
-export const example6: Example = (() => {
-  let type: Syn = {
-    case: "pi",
-    id: {lbl: "A"},
-    dom: {case: "uni", lvl: 0},
-    bod: {case: "uni", lvl: 0}
-  };
-  let term: Syn = {
-    case: "lam",
-    bod: {
-      case: "let",
-      id: {lbl: "A1"},
-      dom: {case: "let", id: {lbl: "B"}, dom: {case: "uni", lvl: 1}, arg: {case: "uni", lvl: 0}, bod: {case: "var", var: 0}},
-      arg: {case: "var", var: 0},
-      bod: {
-        case: "let",
-        id: {lbl: "A2"},
-        dom: {case: "uni", lvl: 0},
-        arg: {case: "var", var: 0},
-        bod: {case: "var", var: 0}
-      }
-    }
-  };
-  let result: Syn = norm(type, term);
-  return {type, term, result};
-})();
+// export const example6: Example = (() => {
+//   let type: Syn = {
+//     case: "pie",
+//     id: {lbl: "A"},
+//     dom: {case: "uni", lvl: 0},
+//     cod: {case: "uni", lvl: 0}
+//   };
+//   let term: Syn = {
+//     case: "lam",
+//     cod: {
+//       case: "let",
+//       id: {lbl: "A1"},
+//       dom: {case: "let", id: {lbl: "B"}, dom: {case: "uni", lvl: 1}, arg: {case: "uni", lvl: 0}, cod: {case: "var", dbl: 0}},
+//       arg: {case: "var", dbl: 0},
+//       cod: {
+//         case: "let",
+//         id: {lbl: "A2"},
+//         dom: {case: "uni", lvl: 0},
+//         arg: {case: "var", dbl: 0},
+//         cod: {case: "var", dbl: 0}
+//       }
+//     }
+//   };
+//   let result: Syn = norm(type, term);
+//   return {type, term, result};
+// })();

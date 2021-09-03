@@ -1,66 +1,64 @@
 import { ChangeEventHandler } from "react";
 import { MouseEventHandler } from "react";
 import App from "../App";
+import { atRev, cons, nil, PList } from "../data/PList";
 import { update } from "../State";
-import { HoleId, Id, Prgm, Term, TermNe, Var } from "./Syntax";
+import { Dbl, HoleId, Id, Prgm, Syn, SynNeu } from "./Syntax";
 
 export type Mode = "display" | "palette";
 
 export class Renderer {
   app: App;
   mode: Mode;
+  pncParL: JSX.Element;
+  pncParR: JSX.Element;
+  pncCol: JSX.Element;
+  pncDot: JSX.Element;
+  pncEq: JSX.Element;
+  pncLet: JSX.Element;
+  pncPie: JSX.Element;
+  pncLam: JSX.Element;
+  pncUni: JSX.Element;
+  pncIn: JSX.Element;
+
   constructor(app: App, mode: Mode) {
     this.app = app;
     this.mode = mode;
+    
+    this.pncParL = this.mode === "palette" ? (<span className="syn paren">(</span>) : (<span className="syn paren left">(</span>);
+    this.pncParR = this.mode === "palette" ? (<span className="syn paren">)</span>) : (<span className="syn paren right">)</span>);
+    this.pncCol = (<span className="syn col">:</span>);
+    this.pncDot = (<span className="syn dot">.</span>);
+    this.pncEq = (<span className="syn eq">=</span>);
+    this.pncLet = (<span className="syn let">let</span>);
+    this.pncPie = (<span className="syn pi">Π</span>);
+    this.pncLam = (<span className="syn lam">λ</span>);
+    this.pncUni = (<span className="syn uni">U</span>);
+    this.pncIn = (<span className="syn in">in</span>);
   }
 
   renderPrgm(p: Prgm): JSX.Element {
     switch (p.case) {
-      case "jud": {
-        if (p.term.case === "let" || p.type.case === "let") {
-          return (<span className="prgm jud">{this.renderTerm(p.term)} :<br/> {this.renderTerm(p.type)}</span>);
-        } else {
-          return (<span className="prgm jud">{this.renderTerm(p.term)} : {this.renderTerm(p.type)}</span>);
-        }
-      }
+      case "jud": return (<span className="prgm jud">{this.renderSyn(p.t)} : {this.renderSyn(p.T)}</span>);
     }
   }
 
-  renderTerm(t: Term, parent?: [Term, number]): JSX.Element {
-    let synParL = this.mode === "palette" ? (<span className="syn paren">(</span>) : (<span className="syn paren left">(</span>);
-    let synParR = this.mode === "palette" ? (<span className="syn paren">)</span>) : (<span className="syn paren right">)</span>);
-    let synCol = (<span className="syn col">:</span>);
-    let synDot = (<span className="syn dot">.</span>);
-    let synEq = (<span className="syn eq">=</span>);
-
-    let synLet = (<span className="syn let">let</span>);
-    let synPi = (<span className="syn pi">Π</span>);
-    let synLam = (<span className="syn lam">λ</span>);
-    let synUni = (<span className="syn uni">U</span>);
-    let synIn = (<span className="syn in">in</span>);
-
+  renderSyn(t: Syn, ctx: PList<Id> = nil()): JSX.Element {
     switch (t.case) {
-      case "uni": return (<span className="term uni">{synUni}<sub>{t.lvl}</sub></span>);
-      case "pi": {
-        return (<span className="term pi">{synParL}{synPi} {this.renderId(t.id, true)} {synCol} {this.renderTerm(t.dom, [t, 0])} {synDot} {this.renderTerm(t.bod, [t, 1])}{synParR}</span>);
-      }
-      case "lam": return (<span className="term lam">{synParL}{synLam} {this.renderTerm(t.bod, [t, 0])}{synParR}</span>);
-      case "app":
-      case "var": return (<span className="term neu">{synParL}{this.renderTermNe(t, [t, 0])}{synParR}</span>);
-      case "let": {
-        switch (parent?.[0].case) {
-          default:    return (           <span className="term let">{synParL}{synLet} {this.renderId(t.id, true)} {synCol} {this.renderTerm(t.dom, [t, 0])} {synEq} {this.renderTerm(t.arg, [t, 1])} {synIn} {this.renderTerm(t.bod, [t, 2])}{synParR}</span>);
-          case "let": return (<span><br/><span className="term let">{synParL}{synLet} {this.renderId(t.id, true)} {synCol} {this.renderTerm(t.dom, [t, 0])} {synEq} {this.renderTerm(t.arg, [t, 1])} {synIn} {this.renderTerm(t.bod, [t, 2])}{synParR}</span></span>);
-        }
-      }
+      case "uni": return (<span className="term uni">{this.pncUni}<sub>{t.lvl}</sub></span>);
+      case "pie": return (<span className="term pi">{this.pncParL}{this.pncPie} {this.renderId(t.id, true)} {this.pncCol} {this.renderSyn(t.dom, ctx)} {this.pncDot} {this.renderSyn(t.cod, cons(t.id, ctx))}{this.pncParR}</span>);
+      case "lam": return (<span className="term lam">{this.pncParL}{this.pncLam} {this.renderId(t.id, true)} {this.pncDot} {this.renderSyn(t.bod, cons(t.id, ctx))}{this.pncParR}</span>);
+      case "app": return (<span className="term neu">{this.pncParL}{this.renderSynNeu(t,ctx)}{this.pncParR}</span>);
+      case "var": return (<span className="term neu">{this.renderSynNeu(t,ctx)}</span>);
+      case "let": return (<span className="term let">{this.pncParL}{this.pncLet} {this.renderId(t.id, true)} {this.pncCol} {this.renderSyn(t.dom, ctx)} {this.pncEq} {this.renderSyn(t.arg, ctx)} {this.pncIn} {this.renderSyn(t.bod, ctx)}{this.pncParR}</span>);
       case "hol": return (<span className="term hol">{this.renderHoleId(t.id)}</span>);
     }
   }
 
-  renderTermNe(t: TermNe, parent?: [Term, number]): JSX.Element {
+  renderSynNeu(t: SynNeu, ctx: PList<Id>): JSX.Element {
     switch (t.case) {
-      case "var": return (<span className="term var">{this.renderVar(t.var)}</span>);
-      case "app": return (<span className="term app">{this.renderTermNe(t.app, [t, 0])} {this.renderTerm(t.arg, [t, 1])}</span>);
+      case "var": return (<span className="term var">{this.renderVar(t.dbl, ctx)}</span>);
+      case "app": return (<span className="term app">{this.renderSynNeu(t.app, ctx)} {this.renderSyn(t.arg, ctx)}</span>);
     }
   }
 
@@ -86,8 +84,8 @@ export class Renderer {
     }
   }
 
-  renderVar(v: Var): JSX.Element {
-    return (<span className="var">{v}</span>)
+  renderVar(dbl: Dbl, ctx: PList<Id>): JSX.Element {
+    return (<span className="var">{atRev(dbl, ctx).lbl}</span>)
   }
 
   renderHoleId(id: HoleId): JSX.Element {

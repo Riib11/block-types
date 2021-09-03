@@ -151,39 +151,39 @@
 
 /* Parentheses */
 
-.term > .syn.paren.left:hover,
-.term > .syn.paren.left:hover ~ .syn.paren.right {
+.term > .pnc.paren.left:hover,
+.term > .pnc.paren.left:hover ~ .pnc.paren.right {
   background-color: red;
   color: white;
 }
 
 /* Syntax */
 
-.syn.paren {
+.pnc.paren {
   font-weight: bold;
 }
-.syn.col {
+.pnc.col {
   font-weight: bold;
 }
-.syn.dot {
+.pnc.dot {
   font-weight: bold;
 }
-.syn.eq {
+.pnc.eq {
   font-weight: bold;
 }
-.syn.let {
+.pnc.let {
   font-weight: bold;
 }
-.syn.pi {
+.pnc.pi {
   font-weight: bold;
 }
-.syn.lam {
+.pnc.lam {
   font-weight: bold;
 }
-.syn.uni {
+.pnc.uni {
   font-weight: bold;
 }
-.syn.in {
+.pnc.in {
   font-weight: bold;
 }
 

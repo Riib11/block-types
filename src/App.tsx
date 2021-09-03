@@ -3,13 +3,13 @@ import { KeyboardEventHandler } from 'react';
 import './App.css';
 import * as Nm from './language/Normalization';
 import { Renderer } from './language/Renderer';
-import { emptyData, freshHole, getHoleIds, HoleId, showTerm, Term } from './language/Syntax';
+import { freshHole, getHoleIds, HoleId, showSyn, Syn } from './language/Syntax';
 import { Props } from './Props';
 import { State, update } from './State';
 
 export default class App extends React.Component<Props, State> {
   state: State = {
-    p: {case: "jud", term: freshHole(), type: freshHole()},
+    p: {case: "jud", t: freshHole(), T: freshHole()},
     id: undefined
   };
 
@@ -35,17 +35,17 @@ export default class App extends React.Component<Props, State> {
           app.setState(state);
         } else
         if (["u", "p", "l", "="].includes(evt.key)) {
-          let term: Term | undefined;
+          let t: Syn | undefined;
           switch (evt.key) {
-            case "u": term = {case: "uni", lvl: 0}; break;
-            case "p": term = {case: "pi", id: {lbl: "x"}, dom: freshHole(), bod: freshHole()}; break;
-            case "l": term = {case: "lam", bod: freshHole()}; break;
-            case "n": term = {case: "app", app: {case: "var", var: 0}, arg: freshHole()}; break;
-            case "=": term = {case: "let", id: {lbl: "x"}, dom: freshHole(), arg: freshHole(), bod: freshHole()}; break;
+            case "u": t = {case: "uni", lvl: 0}; break;
+            case "p": t = {case: "pie", id: {lbl: "x"}, dom: freshHole(), cod: freshHole()}; break;
+            case "l": t = {case: "lam", id: {lbl: "x"}, bod: freshHole()}; break;
+            case "n": t = {case: "app", app: {case: "var", dbl: 0}, arg: freshHole()}; break;
+            case "=": t = {case: "let", id: {lbl: "x"}, dom: freshHole(), arg: freshHole(), bod: freshHole()}; break;
             default: break;
           }
-          if (term !== undefined)
-            app.setState(update(app.state, {case: "fill", id: app.state.id, term}));
+          if (t !== undefined)
+            app.setState(update(app.state, {case: "fill", id: app.state.id, t}));
         }
       } else {
         // select first or last hole
@@ -78,13 +78,13 @@ export default class App extends React.Component<Props, State> {
     // );
   }
 
-  renderExample(example: Nm.Example) {
-    return (
-      <div>
-        {showTerm(example.term)} ~&gt; {showTerm(example.result)} : {showTerm(example.type)}
-      </div>
-    )
-  }
+  // renderExample(example: Nm.Example) {
+  //   return (
+  //     <div>
+  //       {showSyn(example.t)} ~&gt; {showSyn(example.result)} : {showSyn(example.type)}
+  //     </div>
+  //   )
+  // }
 
   renderDisplay(): JSX.Element {
     let r = new Renderer(this, "display");
@@ -143,24 +143,24 @@ export default class App extends React.Component<Props, State> {
     return (
       <div className="palette">
         {this.renderPaletteItemFill("u", {case: "uni", lvl: 0})}
-        {this.renderPaletteItemFill("p", {case: "pi", id: {lbl: "x"}, dom: freshHole(), bod: freshHole()})}
-        {this.renderPaletteItemFill("l", {case: "lam", bod: freshHole()})}
-        {this.renderPaletteItemFill("n", {case: "app", app: {case: "var", var: 0}, arg: freshHole()})}
+        {this.renderPaletteItemFill("p", {case: "pie", id: {lbl: "x"}, dom: freshHole(), cod: freshHole()})}
+        {this.renderPaletteItemFill("l", {case: "lam", id: {lbl: "x"}, bod: freshHole()})}
+        {/* {this.renderPaletteItemFill("n", {case: "app", app: {case: "var", dbl: 0}, arg: freshHole()})} */}
         {this.renderPaletteItemFill("=", {case: "let", id: {lbl: "x"}, dom: freshHole(), arg: freshHole(), bod: freshHole()})}
       </div>
     );
   }
 
-  renderPaletteItemFill(k: string, t: Term): JSX.Element {
+  renderPaletteItemFill(k: string, t: Syn): JSX.Element {
     let app = this;
     let r = new Renderer(this, "palette");
     let onClick: MouseEventHandler = event => {
-      let state = update(this.state, {case: "fill", id: app.state.id as HoleId, term: t});
+      let state = update(this.state, {case: "fill", id: app.state.id as HoleId, t: t});
       app.setState(state);
     }
     return (
       <div className="palette-item" onClick={onClick}>
-        {k}: {r.renderTerm(t)}
+        {k}: {r.renderSyn(t)}
       </div>
     )
   }
