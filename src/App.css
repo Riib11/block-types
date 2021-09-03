@@ -24,6 +24,7 @@
   padding: 10px;
   overflow: scroll;
   white-space: nowrap;
+  line-height: 125%;
 
   font-family: "Courier New", Courier, monospace;
   box-shadow: -1px 0 0 0 black inset;
