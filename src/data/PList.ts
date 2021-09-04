@@ -7,12 +7,7 @@ export function nil<A>(): PList<A> {return {case: "nil"}}
 
 export function cons<A>(h: A, t: PList<A>): PList<A> {return {case: "cons", h, t}}
 
-export function app<A>(l1: PList<A>, l2: PList<A>): PList<A> {
-  switch (l1.case) {
-    case "nil": return l2;
-    case "cons": return cons(l1.h, app(l1.t, l2));
-  }
-}
+export function single<A>(h: A): PList<A> {return {case: "cons", h, t: nil()}}
 
 export function at<A>(i: number, l0: PList<A>): A {
   function go(l: PList<A>): A {
@@ -41,6 +36,19 @@ export function foldl<A, B>(f: (b: B, a: A) => B, b: B, l: PList<A>): B {
     case "cons": return foldl(f, f(b, l.h), l.t);
   }
 }
+
+export function map<A, B>(f: (a: A) => B, l: PList<A>): PList<B> {
+  return foldl((bs, a) => cons(f(a), bs), nil(), l);
+}
+
+export function toArray<A>(l: PList<A>): A[] {
+  let arr: A[] = [];
+  foldl((_, a) => arr.push(a), 0, l);
+  return arr;
+}
+
+export function app<A>(l1: PList<A>, l2: PList<A>): PList<A>
+  {return foldl((l3, h) => cons(h, l3), l2, l1)}
 
 // Show
 

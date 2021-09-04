@@ -22,32 +22,40 @@ export type SynUni = {case: "uni", lvl: Level}; // universe
 export type SynPie = {case: "pie", id: Id, dom: Syn, cod: Syn}; // Π
 export type SynLam = {case: "lam", id: Id, bod: Syn}; // λ
 export type SynApp = {case: "app", app: SynNeu, arg: Syn}; // application
-export type SynVar = {case: "var", dbl: Dbl}; // variable
+export type SynVar = {case: "var", id: Id, dbl: Dbl}; // variable
 export type SynLet = {case: "let", id: Id, dom: Syn, arg: Syn, bod: Syn}; // let
 export type SynHol = {case: "hol", id: HoleId}; // ?
 
-export type Level = number; // level
+export type Level = number | "omega"; // level
 export type Id = {lbl: string}; // identifier
 export type Dbl = number; // DeBruijn level
 export type HoleId = {uid: number};
 
-export function showSyn(t: Syn, ctx: PList<Id> = nil()): string {
+export function showSyn(t: Syn): string {
   switch (t.case) {
     case "uni": return `U${t.lvl}`;
-    case "pie": return `Π ${t.id} : ${showSyn(t.dom, cons(t.id, ctx))} . ${showSyn(t.cod, cons(t.id, ctx))}`;
-    case "lam": return `λ ${t.id} . ${showSyn(t.bod, cons(t.id, ctx))}`;
-    case "let": return `let ${t.id} : ${showSyn(t.dom, ctx)} = ${showSyn(t.arg, ctx)} in ${showSyn(t.bod, ctx)}`;
+    case "pie": return `Π ${t.id} : ${showSyn(t.dom)} . ${showSyn(t.cod)}`;
+    case "lam": return `λ ${t.id} . ${showSyn(t.bod)}`;
+    case "let": return `let ${t.id} : ${showSyn(t.dom)} = ${showSyn(t.arg)} in ${showSyn(t.bod)}`;
     case "hol": return `?`;
-    case "app": return `(${showSynNeu(t, ctx)})`;
-    case "var": return showSynNeu(t, ctx);
+    case "app": return `(${showSynNeu(t)})`;
+    case "var": return showSynNeu(t);
   }
 }
 
-export function showSynNeu(t: SynNeu, ctx: PList<Id>): string {
+export function showSynNeu(t: SynNeu): string {
   switch (t.case) {
-    case "app": return `${showSynNeu(t.app, ctx)} ${showSyn(t.arg, ctx)}`;
-    case "var": return `${atRev(t.dbl, ctx)}`;
+    case "app": return `${showSynNeu(t.app)} ${showSyn(t.arg)}`;
+    case "var": return `${t.id.lbl}`;
   }
+}
+
+export function showLevel(lvl: Level): string {
+  return lvl === "omega" ? "ω" : lvl.toString();
+}
+
+export function predLevel(lvl: Level): Level {
+  return lvl === "omega" ? lvl : lvl - 1;
 }
 
 // HoleId
@@ -87,6 +95,9 @@ export function getHoleIds(p: Prgm): HoleId[] {
 }
 
 // Ids
+
+export function freshId(lbl: string = "x"): Id
+  {return {lbl};}
 
 export function renameId(p: Prgm, id: Id, lbl: string): void {
   // function go(a: Syn): void {

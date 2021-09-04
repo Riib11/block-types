@@ -7,7 +7,7 @@ Basically is the functionality of `getHoles` that we've talked about, but with a
 import { atRev, cons, len, nil, PList } from "../data/PList";
 import { evaluate, reflect } from "./Normalization";
 import { Sem, SemArr, SemPie, SemTyp } from "./Semantics";
-import { HoleId, Syn, SynNeu } from "./Syntax";
+import { HoleId, Id, Syn, SynNeu } from "./Syntax";
 
 /*
 ## Molding
@@ -18,8 +18,8 @@ seeps into the "shapes" (i.e. type & context) of the holes.
 TODO: should the HoleShape store the type as a SemTyp or a Syn??
 */
 
-type HoleCtx = PList<SemTyp>;
-type HoleShape = [SemTyp, HoleCtx];
+export type HoleCtx = PList<{id: Id, T: SemTyp}>;
+export type HoleShape = {T: SemTyp, ctx: HoleCtx};
 
 export function mold(T: Syn, t: Syn): Map<HoleId, HoleShape> {
   let shapes: Map<HoleId, HoleShape> = new Map();
@@ -34,22 +34,22 @@ export function mold(T: Syn, t: Syn): Map<HoleId, HoleShape> {
             goSem(T, tTyp.dom, ctx);
             goSem(
               T,
-              tTyp.cod(reflect(tTyp.dom, {case: "var", dbl: len(ctx)})) as SemTyp,
-              cons(tTyp.dom, ctx)
+              tTyp.cod(reflect(tTyp.dom, {case: "var", id: tTyp.id, dbl: len(ctx)})) as SemTyp,
+              cons({id: tTyp.id, T: tTyp.dom}, ctx)
             ); 
             return;
           }
           case "app": goApp(tTyp, ctx); return;
           case "var": return;
-          case "hol": shapes.set(tTyp.id, [T, ctx]); return;
+          case "hol": shapes.set(tTyp.id, {T, ctx}); return;
         }
         break;
       }
       case "pie": {
         goSem(
-          T.cod(reflect(T.dom, {case: "var", dbl: len(ctx)})) as SemTyp,
-          (t as SemArr)(reflect(T.dom, {case: "var", dbl: len(ctx)})),
-          cons(T.dom, ctx)
+          T.cod(reflect(T.dom, {case: "var", id: T.id, dbl: len(ctx)})) as SemTyp,
+          (t as SemArr)(reflect(T.dom, {case: "var", id: T.id, dbl: len(ctx)})),
+          cons({id: T.id, T: T.dom}, ctx)
         );
         return;
       }
@@ -57,7 +57,7 @@ export function mold(T: Syn, t: Syn): Map<HoleId, HoleShape> {
       case "app": goSem(goApp(T, ctx), t, ctx); return;
       case "var": return;
       // You cannot inspect a term before it's type hole is filled
-      case "hol": shapes.set(T.id, [{case: "uni", lvl: -1}, ctx]); 
+      case "hol": shapes.set(T.id, {T: {case: "uni", lvl: -1}, ctx}); 
     }
   }
 
@@ -69,7 +69,7 @@ export function mold(T: Syn, t: Syn): Map<HoleId, HoleShape> {
           goSem(F.dom, t.arg, ctx);
           return F.cod(t.arg) as SemPie;
         }
-        case "var": return atRev(t.dbl, ctx) as SemPie;
+        case "var": return atRev(t.dbl, ctx).T as SemPie;
       }
     }
     switch (t.case) {
@@ -78,7 +78,7 @@ export function mold(T: Syn, t: Syn): Map<HoleId, HoleShape> {
         goSem(F.dom, t.arg, ctx);
         return F.cod(t.arg) as SemTyp;
       }
-      case "var": return atRev(t.dbl, ctx);
+      case "var": return atRev(t.dbl, ctx).T;
     }
   }
 

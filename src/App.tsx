@@ -40,7 +40,7 @@ export default class App extends React.Component<Props, State> {
             case "u": t = {case: "uni", lvl: 0}; break;
             case "p": t = {case: "pie", id: {lbl: "x"}, dom: freshHole(), cod: freshHole()}; break;
             case "l": t = {case: "lam", id: {lbl: "x"}, bod: freshHole()}; break;
-            case "n": t = {case: "app", app: {case: "var", dbl: 0}, arg: freshHole()}; break;
+            case "n": t = {case: "app", app: {case: "var", id: {lbl: "x"}, dbl: 0}, arg: freshHole()}; break;
             case "=": t = {case: "let", id: {lbl: "x"}, dom: freshHole(), arg: freshHole(), bod: freshHole()}; break;
             default: break;
           }

@@ -4,7 +4,7 @@
 
 import { atRev, cons, nil, PList } from "../data/PList";
 import { Sem, SemTyp } from "./Semantics";
-import { Dbl, Id, Syn, SynNeu } from "./Syntax";
+import { Dbl, Id, predLevel, Syn, SynNeu } from "./Syntax";
 
 /*
 ## Types
@@ -21,7 +21,7 @@ export function normalize(T: Syn, t: Syn): Syn
 
 // T: syntactic type
 export function normalizeType(T: Syn): Syn
-  {return normalize({case: "uni", lvl: -1}, T)}
+  {return normalize({case: "uni", lvl: "omega"}, T)}
 
 /*
 ## Evaluation
@@ -74,32 +74,37 @@ export function reify(T: SemTyp, t: Sem, dbl: Dbl = 0): Syn {
       let tTyp: SemTyp = t as SemTyp;
       switch (tTyp.case) {
         case "uni": return tTyp;
-        case "pie": return {
-          case: "pie",
-          id: tTyp.id,
-          dom: reify({case: "uni", lvl: T.lvl}, tTyp.dom, dbl),
-          cod: reify({case: "uni", lvl: T.lvl}, tTyp.cod(reflect(tTyp.dom, {case: "var", dbl}, dbl + 1)), dbl + 1)
-        }
+        case "pie":
+          return {
+            case: "pie",
+            id: tTyp.id,
+            dom: reify({case: "uni", lvl: predLevel(T.lvl)}, tTyp.dom, dbl),
+            cod: reify({case: "uni", lvl: predLevel(T.lvl)}, tTyp.cod(reflect(tTyp.dom, {case: "var", id: tTyp.id, dbl}, dbl + 1)), dbl + 1)
+          }
         case "hol": 
         case "app":
         case "var": return tTyp;
       }
       break;
     }
-    case "pie": return {
-      case: "lam",
-      id: T.id,
-      bod:
-        reify(
-          T.cod(reflect(T.dom, {case: "var", dbl}, dbl + 1)) as SemTyp,
-          (t as (a: Sem) => Sem)(reflect(T.dom, {case: "var", dbl}, dbl + 1))
-        )
-    }
+    case "pie":
+      return {
+        case: "lam",
+        id: T.id,
+        bod:
+          reify(
+            T.cod(reflect(T.dom, {case: "var", id: T.id, dbl}, dbl + 1)) as SemTyp,
+            (t as (a: Sem) => Sem)(reflect(T.dom, {case: "var", id: T.id, dbl}, dbl + 1))
+          )
+      }
     case "hol":
     case "app":
     case "var": return t as Syn;
   }
 }
+
+export function reifyType(T: SemTyp, dbl: Dbl = 0): Syn
+  {return reify({case: "uni", lvl: "omega"}, T, dbl)}
 
 // /*
 // # Examples
