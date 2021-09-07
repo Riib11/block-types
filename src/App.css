@@ -21,13 +21,27 @@
   position: fixed;
   width: calc(100vw - 420px);
   height: 100%;
-  padding: 10px;
-  overflow: scroll;
-  white-space: nowrap;
   line-height: 125%;
 
   font-family: "Courier New", Courier, monospace;
   box-shadow: -1px 0 0 0 black inset;
+}
+
+.program {
+  padding: 10px;
+  overflow: scroll;
+  white-space: nowrap;
+}
+
+.buffers {
+  padding: 10px;
+  overflow: scroll;
+  white-space: nowrap;
+
+  box-shadow: 0 0 0 1px black;
+}
+
+.buffer {
 }
 
 /* Panel */
@@ -57,6 +71,9 @@
 
 .context {
   font-family: "Courier New", Courier, monospace;
+}
+
+.context-item {
 }
 
 /* Goal */

@@ -3,7 +3,7 @@ import { MouseEventHandler } from "react";
 import App from "../App";
 import { atRev, cons, nil, PList } from "../data/PList";
 import { update } from "../State";
-import { Dbl, HoleId, Id, Prgm, Syn, SynNeu } from "./Syntax";
+import { Dbl, HoleId, Id, Level, Prgm, Syn, SynNeu } from "./Syntax";
 
 export type Mode = "display" | "palette";
 
@@ -38,14 +38,12 @@ export class Renderer {
   }
 
   renderPrgm(p: Prgm): JSX.Element {
-    switch (p.case) {
-      case "jud": return (<span className="prgm jud">{this.renderSyn(p.t)} : {this.renderSyn(p.T)}</span>);
-    }
+    return (<span className="prgm jud">{this.renderSyn(p.t)} : {this.renderSyn(p.T)}</span>)
   }
 
   renderSyn(t: Syn, ctx: PList<Id> = nil()): JSX.Element {
     switch (t.case) {
-      case "uni": return (<span className="term uni">{this.pncUni}<sub>{t.lvl}</sub></span>);
+      case "uni": return (<span className="term uni">{this.pncUni}<sub>{this.renderLevel(t.lvl)}</sub></span>);
       case "pie": return (<span className="term pi">{this.pncParL}{this.pncPie} {this.renderId(t.id, true)} {this.pncCol} {this.renderSyn(t.dom, ctx)} {this.pncDot} {this.renderSyn(t.cod, cons(t.id, ctx))}{this.pncParR}</span>);
       case "lam": return (<span className="term lam">{this.pncParL}{this.pncLam} {this.renderId(t.id, true)} {this.pncDot} {this.renderSyn(t.bod, cons(t.id, ctx))}{this.pncParR}</span>);
       case "app": return (<span className="term neu">{this.pncParL}{this.renderSynNeu(t,ctx)}{this.pncParR}</span>);
@@ -61,6 +59,9 @@ export class Renderer {
       case "app": return (<span className="term app">{this.renderSynNeu(t.app, ctx)} {this.renderSyn(t.arg, ctx)}</span>);
     }
   }
+
+  renderLevel(lvl: Level): JSX.Element
+    {return lvl === "omega" ? (<span>ω</span>) : (<span>{lvl}</span>)}
 
   renderId(id: Id, editable: boolean = false): JSX.Element {
     let ren = this;
@@ -92,7 +93,7 @@ export class Renderer {
     let s = `?`;
     switch (this.mode) {
       case "display": {
-        if (id === this.app.state.id) {
+        if (id === this.app.state.foc?.id) {
           return (<span className="holeId focussed">{s}</span>)
         } else {
           // transition: select this hole

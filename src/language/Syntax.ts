@@ -2,14 +2,13 @@
 # Syntax
 */
 
-import { atRev, cons, nil, PList } from "../data/PList";
+import { atRev, PList } from "../data/PList";
 
 /*
 ## Program
 */
 
-export type Prgm
-  = {case: "jud", t: Syn, T: Syn} // judgement
+export type Prgm = {t: Syn, T: Syn};
 
   /*
 ## Syntactic domain
@@ -50,6 +49,8 @@ export function showSynNeu(t: SynNeu): string {
   }
 }
 
+// Level
+
 export function showLevel(lvl: Level): string {
   return lvl === "omega" ? "ω" : lvl.toString();
 }
@@ -57,6 +58,12 @@ export function showLevel(lvl: Level): string {
 export function predLevel(lvl: Level): Level {
   return lvl === "omega" ? lvl : lvl - 1;
 }
+
+// DeBruijn Levels
+
+export function getDbl<A>(dbl: Dbl, ctx: PList<A>): A
+  {return atRev(dbl, ctx);}
+
 
 // HoleId
 
@@ -88,9 +95,8 @@ export function getHoleIds(p: Prgm): HoleId[] {
       case "var": goNe(t); return;
     }
   }
-  switch (p.case) {
-    case "jud": go(p.t); go(p.T); break;
-  }
+  go(p.T);
+  go(p.t);
   return ids;
 }
 
@@ -108,4 +114,18 @@ export function renameId(p: Prgm, id: Id, lbl: string): void {
   //     }
   //   }
   // }
+}
+
+// Equality
+
+export function eqSyn(t1: Syn, t2: Syn): boolean {
+  switch (t1.case) {
+    case "uni": return t1.case === t2.case && t1.lvl === t2.lvl;
+    case "pie": return t1.case === t2.case && eqSyn(t1.dom, t2.dom) && eqSyn(t1.cod, t2.cod);
+    case "lam": return t1.case === t2.case && eqSyn(t1.bod, t2.bod);
+    case "let": return t1.case === t2.case && eqSyn(t1.dom, t2.dom) && eqSyn(t1.arg, t2.arg) && eqSyn(t1.bod, t2.bod);
+    case "hol": return t1.case === t2.case && t1.id === t2.id;
+    case "app": return t1.case === t2.case && eqSyn(t1.app, t2.app) && eqSyn(t1.arg, t2.arg);
+    case "var": return t1.case === t2.case && t1.dbl === t2.dbl;
+  }
 }

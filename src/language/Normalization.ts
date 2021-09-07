@@ -10,7 +10,7 @@ import { Dbl, Id, predLevel, Syn, SynNeu } from "./Syntax";
 ## Types
 */
 
-type Ctx = PList<Sem>;
+export type Ctx = PList<Sem>;
 
 /*
 ## Normalization
@@ -44,6 +44,9 @@ export function evaluate(t: Syn, ctx: Ctx = nil()): Sem {
     case "var": return atRev(t.dbl, ctx);
   }
 }
+
+export function evaluateTyp(T: Syn, ctx: Ctx = nil()): SemTyp
+  {return evaluate(T, ctx) as SemTyp}
 
 /*
 ## Reflection
@@ -103,7 +106,7 @@ export function reify(T: SemTyp, t: Sem, dbl: Dbl = 0): Syn {
   }
 }
 
-export function reifyType(T: SemTyp, dbl: Dbl = 0): Syn
+export function reifyTyp(T: SemTyp, dbl: Dbl = 0): Syn
   {return reify({case: "uni", lvl: "omega"}, T, dbl)}
 
 // /*
