@@ -5,25 +5,26 @@
 import { atRev, PList } from "../data/PList";
 
 /*
-## Program
-*/
-
-export type Prgm = {t: Syn, T: Syn};
-
-  /*
 ## Syntactic domain
 */
 
-export type Syn = SynUni | SynPie | SynLam | SynNeu | SynLet | SynHol;
+export type Syn          = SynUni | SynPie    | SynNeu    | SynHol | SynLam    | SynLet; // syntactical
+export type SynNrm       = SynUni | SynPieNrm | SynNeuNrm | SynHol | SynLamNrm ; // syntactical normal form
+export type SynTypNrm    = SynUni | SynPieNrm | SynNeuNrm | SynHol ; // syntactical type normal form
 //------------------------------------------------------------------------------
-export type SynNeu = SynApp | SynVar // neutral
-export type SynUni = {case: "uni", lvl: Level}; // universe
-export type SynPie = {case: "pie", id: Id, dom: Syn, cod: Syn}; // Π
-export type SynLam = {case: "lam", id: Id, bod: Syn}; // λ
-export type SynApp = {case: "app", app: SynNeu, arg: Syn}; // application
-export type SynVar = {case: "var", id: Id, dbl: Dbl}; // variable
-export type SynLet = {case: "let", id: Id, dom: Syn, arg: Syn, bod: Syn}; // let
-export type SynHol = {case: "hol", id: HoleId}; // ?
+export type SynNeu       = SynApp    | SynVar // neutral
+export type SynNeuNrm    = SynAppNrm | SynVar // neutral
+//------------------------------------------------------------------------------
+export type SynUni       = {case: "uni", lvl: Level}; // universe
+export type SynPie       = {case: "pie", id: Id, dom: Syn, cod: Syn}; // Π
+export type SynPieNrm    = {case: "pie", id: Id, dom: SynTypNrm, cod: SynTypNrm}; // Π
+export type SynLam       = {case: "lam", id: Id, bod: Syn}; // λ
+export type SynLamNrm    = {case: "lam", id: Id, bod: SynNrm}; // λ
+export type SynApp       = {case: "app", app: SynNeu, arg: Syn}; // application
+export type SynAppNrm    = {case: "app", app: SynNeuNrm, arg: SynNrm}; // application
+export type SynVar       = {case: "var", id: Id, dbl: Dbl}; // variable
+export type SynLet       = {case: "let", id: Id, dom: Syn, arg: Syn, bod: Syn}; // let
+export type SynHol       = {case: "hol", id: HoleId}; // ?
 
 export type Level = number | "omega"; // level
 export type Id = {lbl: string}; // identifier
@@ -76,28 +77,40 @@ export function freshHole(): Syn {return {case: "hol", id: freshHoleId()}}
 
 // HoleIds
 
-export function getHoleIds(p: Prgm): HoleId[] {
-  let ids: HoleId[] = [];
-  function goNe(t: SynNeu): void {
-    switch(t.case) {
-      case "var": return;
-      case "app": goNe(t.app); go(t.arg); return;
-    }
+// export function getHoleIds(p: Prgm): HoleId[] {
+//   let ids: HoleId[] = [];
+//   function goNe(t: SynNeu): void {
+//     switch(t.case) {
+//       case "var": return;
+//       case "app": goNe(t.app); go(t.arg); return;
+//     }
+//   }
+//   function go(t: Syn): void {
+//     switch (t.case) {
+//       case "uni": return;
+//       case "pie": go(t.dom); go(t.cod); return;
+//       case "lam": go(t.bod); return;
+//       case "let": go(t.dom); go(t.arg); go(t.bod); return;
+//       case "hol": ids.push(t.id); return;
+//       case "app":
+//       case "var": goNe(t); return;
+//     }
+//   }
+//   go(p.T);
+//   go(p.t);
+//   return ids;
+// }
+
+export function hasHoleId(id: HoleId, t: Syn): boolean {
+  switch (t.case) {
+    case "uni": return false;
+    case "pie": return hasHoleId(id, t.dom) || hasHoleId(id, t.cod);
+    case "lam": return hasHoleId(id, t.bod);
+    case "let": return hasHoleId(id, t.dom) || hasHoleId(id, t.arg) || hasHoleId(id, t.bod);
+    case "app": return hasHoleId(id, t.app) || hasHoleId(id, t.arg);
+    case "var": return false;
+    case "hol": return id === t.id;
   }
-  function go(t: Syn): void {
-    switch (t.case) {
-      case "uni": return;
-      case "pie": go(t.dom); go(t.cod); return;
-      case "lam": go(t.bod); return;
-      case "let": go(t.dom); go(t.arg); go(t.bod); return;
-      case "hol": ids.push(t.id); return;
-      case "app":
-      case "var": goNe(t); return;
-    }
-  }
-  go(p.T);
-  go(p.t);
-  return ids;
 }
 
 // Ids
@@ -105,16 +118,16 @@ export function getHoleIds(p: Prgm): HoleId[] {
 export function freshId(lbl: string = "x"): Id
   {return {lbl};}
 
-export function renameId(p: Prgm, id: Id, lbl: string): void {
-  // function go(a: Syn): void {
-  //   switch (t.case) {
-  //     case "uni": return;
-  //     case "pi": {
-  //       if (t.id === id) 
-  //     }
-  //   }
-  // }
-}
+// export function renameId(p: Prgm, id: Id, lbl: string): void {
+//   // function go(a: Syn): void {
+//   //   switch (t.case) {
+//   //     case "uni": return;
+//   //     case "pi": {
+//   //       if (t.id === id) 
+//   //     }
+//   //   }
+//   // }
+// }
 
 // Equality
 
