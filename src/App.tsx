@@ -66,7 +66,6 @@ export default class App extends React.Component<Props, State> {
     let sig = ren.renderSig(this.state.sig);
     let imp = ren.renderImp(this.state.imp);
     let pfbs = this.state.pfbs.map((pfb, i) => ren.renderPfb(pfb, i));
-    console.log("pfbs"); console.log(pfbs);
     return (
       <div className="display">
         <div className="main">
@@ -108,11 +107,9 @@ export default class App extends React.Component<Props, State> {
 
   renderContext(): JSX.Element {
     if (this.state.ix !== undefined) {
-      console.log("renderContext");
       let ren = new Renderer(this, "panel");
       let ix: HoleIx = this.state.ix;
       let shape: HoleShape = mold(this.state, ix);
-      console.log("shape:"); console.log(shape);
       let items: JSX.Element[] = [];
       map(
         item => {
@@ -160,7 +157,6 @@ export default class App extends React.Component<Props, State> {
       let ren = new Renderer(this, "panel");
       let shape: HoleShape = mold(this.state, this.state.ix);
       let plt = genPalette(shape);
-      console.log("plt"); console.log(plt);
       let pltElems: JSX.Element[] = [];
       plt.forEach(item => {
         switch (item.case) {
