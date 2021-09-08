@@ -1,15 +1,22 @@
 import { app, atRev, cons, len, map, nil, PList, rev, single, toArray } from "../data/PList";
+import { Prefab } from "../State";
 import { ctxToSemCtx } from "./Ctx";
 import { HoleShape } from "./Molding";
 import { evaluateTyp, reify, reifyTyp } from "./Normalization";
 import { SemTyp } from "./Semantics";
-import { Dbl, freshId, hole, predLevel, showSyn, Syn, SynNeu, SynVar } from "./Syntax";
+import { Dbl, eqSyn, freshId, hole, predLevel, showSyn, Syn, SynNeu, SynVar } from "./Syntax";
 
-export function genPalette(shape: HoleShape): Syn[] {
+export type PaletteItem
+  = {case: "fill", t: Syn}
+  | {case: "pfb", pfb: Prefab}
+
+export function genPalette(shape: HoleShape): PaletteItem[] {
   let T = shape.T;
-  let plt: Syn[] = [];
+  let plt: PaletteItem[] = [];
 
-  // f ==> f ? ... ? where f : Π (x1 : A1) ... (xn : An) . B(x1, ..., xn)
+  // T = Π (x1 : A1) ... (xn : An) . B(x1, ..., xn)
+  // f : T
+  // => f ? ... ?
   function genArgHoles(x: SynVar, T: SemTyp): SynNeu {
     switch (T.case) {
       case "pie":
@@ -30,26 +37,45 @@ export function genPalette(shape: HoleShape): Syn[] {
         // console.log("item:"); console.log(item);
         // console.log("evaluateTyp(item.T):"); console.log(evaluateTyp(item.T, ctxToSemCtx(shape.ctx)));
         let semCtx = ctxToSemCtx(shape.ctx);
-        if (item.T.case !== "hol" && item.T.case !== "pie")
-          plt.push(genArgHoles({case: "var", id: item.id, dbl}, evaluateTyp(item.T, semCtx)));
+        switch (item.T.case) {
+          case "pie": {
+            plt.push({
+              case: "pfb",
+              pfb: {
+                ctx: shape.ctx,
+                T: shape.T,
+                t: genArgHoles({case: "var", id: item.id, dbl}, evaluateTyp(item.T, semCtx))
+              }
+            });
+            break;
+          }
+          case "hol": break;
+          default: {
+            if (eqSyn(item.T, shape.T))
+              plt.push({
+                case: "fill",
+                t: {case: "var", id: item.id, dbl}
+              });
+            break;
+          }
+        }
         dbl++;
       },
       rev(shape.ctx)
     );
-    
   }
 
   switch (T.case) {
     case "uni": {
       // TODO: interface for picking level
-      plt.push({case: "uni", lvl: predLevel(T.lvl)});
-      plt.push({case: "pie", id: freshId(), dom: hole, cod: hole});
-      plt.push({case: "let", id: freshId(), dom: hole, arg: hole, bod: hole});
+      plt.push({case: "fill", t: {case: "uni", lvl: predLevel(T.lvl)}});
+      plt.push({case: "fill", t: {case: "pie", id: freshId(), dom: hole, cod: hole}});
+      plt.push({case: "fill", t: {case: "let", id: freshId(), dom: hole, arg: hole, bod: hole}});
       paletteFromCtx()
       break;
     }
     case "pie": {
-      plt.push({case: "lam", id: T.id, bod: hole});
+      plt.push({case: "fill", t: {case: "lam", id: T.id, bod: hole}});
       break;
     }
     case "hol": break; // a term hole's surface type hole must be filled first

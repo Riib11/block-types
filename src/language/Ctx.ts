@@ -1,6 +1,6 @@
-import { cons, map, nil, PList } from "../data/PList";
+import { cons, map, nil, PList, zip } from "../data/PList";
 import { evaluate, SemCtx } from "./Normalization";
-import { Id, SynTypNrm } from "./Syntax";
+import { eqSyn, Id, SynTypNrm } from "./Syntax";
 
 export type Ctx = PList<{id: Id, T: SynTypNrm}>;
 export type Ids = PList<Id>;
@@ -13,4 +13,11 @@ export function ctxToSemCtx(ctx: Ctx): SemCtx {
     }
     case "nil": return nil();
   }
+}
+
+export function eqCtx(ctx1: Ctx, ctx2: Ctx): boolean {
+  let ctxZip = zip(ctx1, ctx2);
+  let res = true;
+  map(item => res = eqSyn(item[0].T, item[1].T), ctxZip);
+  return res;
 }

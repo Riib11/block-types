@@ -66,6 +66,7 @@ export default class App extends React.Component<Props, State> {
     let sig = ren.renderSig(this.state.sig);
     let imp = ren.renderImp(this.state.imp);
     let pfbs = this.state.pfbs.map((pfb, i) => ren.renderPfb(pfb, i));
+    console.log("pfbs"); console.log(pfbs);
     return (
       <div className="display">
         <div className="main">
@@ -161,16 +162,38 @@ export default class App extends React.Component<Props, State> {
       let plt = genPalette(shape);
       console.log("plt"); console.log(plt);
       let pltElems: JSX.Element[] = [];
-      plt.forEach(t => {
-        let onClick: MouseEventHandler = event => {
-          update(this.state, {case: "fill", t});
-          app.update()
+      plt.forEach(item => {
+        switch (item.case) {
+          case "fill": {
+            let onClick: MouseEventHandler = event => {
+              update(this.state, {case: "fill", t: item.t});
+              app.update()
+            }
+            pltElems.push(
+              <div className="palette-item" onClick={onClick}>
+                {ren.renderSyn(item.t, ix)}
+              </div>
+            );
+            break;
+          }
+          case "pfb": {
+            let onClick: MouseEventHandler = event => {
+              update(this.state, {
+                case: "new prefab",
+                pfb: item.pfb
+              });
+              app.update()
+            }
+            pltElems.push(
+              <div className="palette-item" onClick={onClick}>
+                {ren.renderSyn(item.pfb.t, ix)}
+              </div>
+            );
+            break;
+          }
         }
-        pltElems.push(
-          <div className="palette-item" onClick={onClick}>
-            {ren.renderSyn(t, ix)}
-          </div>
-        );
+
+
       });
       return (
         <div className="palette">

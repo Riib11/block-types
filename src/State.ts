@@ -1,5 +1,5 @@
 import { len, nil, shift } from "./data/PList";
-import { Ctx } from "./language/Ctx";
+import { Ctx, eqCtx } from "./language/Ctx";
 import { HoleIx, HoleIxSteps } from "./language/HoleIx";
 import { infer } from "./language/Inference";
 import { HoleShape, mold } from "./language/Molding";
@@ -23,7 +23,8 @@ export type Prefab = {
 export type Trans
   = {case: "select", ix: HoleIx} // select a hole as the new focussed hole
   | {case: "fill", t: Syn} // fill the focussed hole with a term
-  | {case: "fill prefab", p: Prefab} // attempt to fill the focussed hole with a prefab
+  | {case: "fill prefab", i: number} // attempt to fill the focussed hole with the prefab at index i
+  | {case: "new prefab", pfb: Prefab} // create a new prefab
   | {case: "rename", id: Id, lbl: string} // rename an Id
 
 export function update(state: State, trans: Trans): void {
@@ -53,14 +54,53 @@ export function update(state: State, trans: Trans): void {
           }
         }
       }
+      // unfocus
       state.ix = undefined;
       break;
     }
     case "fill prefab": {
-      break; // TODO
+      if (state.ix === undefined) {
+        console.log("You must select a hole before filling.");
+        break;
+      }
+      let shape = mold(state, state.ix);
+      let pfb = state.pfbs[trans.i]
+      // check that types matche
+      if (!eqSyn(shape.T, pfb.T)) {
+        console.log("You cannot fill a hole with a prefab of a different type.");
+        break;
+      }
+      // check that contexts match
+      if (!eqCtx(shape.ctx, shape.ctx)) {
+        console.log("You cannot fill a hole with a prefab from a different context.");
+        break;
+      }
+      // fill
+      switch (state.ix.top.case) {
+        case "sig": state.sig = fillSyn(state.sig, pfb.t, state.ix.steps); break;
+        case "imp": state.imp = fillSyn(state.imp, pfb.t, state.ix.steps); break;
+        case "pfb": {
+          let pfb = state.pfbs[state.ix.top.i];
+          switch (state.ix.top.subcase) {
+            case "sig": pfb.T = fillSyn(pfb.T, pfb.t, state.ix.steps); break;
+            case "imp": pfb.t = fillSyn(pfb.t, pfb.t, state.ix.steps); break;
+          }
+        }
+      }
+      // delete used prefab
+      state.pfbs.splice(trans.i, 1);
+      // unfocus
+      state.ix = undefined;
+      break;
+    }
+    case "new prefab": {
+      console.log("trans.p:"); console.log(trans.pfb);
+      state.pfbs.push(trans.pfb);
+      break;
     }
     case "rename": {
       trans.id.lbl = trans.lbl;
+      break;
     }
   }
 }

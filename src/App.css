@@ -33,8 +33,9 @@
   white-space: nowrap;
 }
 
-.prefabs {
+.display > .prefabs {
   padding: 10px;
+  padding-bottom: 0;
   overflow: scroll;
   white-space: nowrap;
 
@@ -42,6 +43,22 @@
 }
 
 .prefab {
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.prefab > .submit {
+  width: 20px;
+  height: 20px;
+  background-color: rgb(141, 141, 255);
+}
+.prefab > .submit:hover {
+  cursor: pointer;
+  background-color: rgb(0, 0, 255);
+}
+
+.prefab > .box {
+  box-shadow: 0 0 0 1px black;
 }
 
 /* Panel */

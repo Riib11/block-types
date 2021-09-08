@@ -47,11 +47,19 @@ export class Renderer {
 
   // i: index of prefab
   renderPfb(pfb: Prefab, i: number): JSX.Element {
+    let ren = this;
+    let onClick: MouseEventHandler = event => {
+      update(ren.app.state, {case: "fill prefab", i});
+      ren.app.update();
+    }
     return (
       <div className="prefab">
-        <div className="sig">{this.renderSyn(pfb.T, topHoleIx({case: "pfb", i, subcase: "sig"}))}</div>
-        <div className="imp">{this.renderSyn(pfb.T, topHoleIx({case: "pfb", i, subcase: "imp"}))}</div>
-      </div>
+        <div className="submit" onClick={onClick}></div>
+        <div className="box">
+          <div className="sig">{this.renderSyn(pfb.T, topHoleIx({case: "pfb", i, subcase: "sig"}))}</div>
+          <div className="imp">{this.renderSyn(pfb.t, topHoleIx({case: "pfb", i, subcase: "imp"}))}</div>
+        </div>
+     </div>
     );
   }
 
