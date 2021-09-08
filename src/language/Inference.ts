@@ -1,5 +1,5 @@
 import { len, PList } from "../data/PList";
-import { Ctx } from "./Molding";
+import { Ctx } from "./Ctx";
 import { evaluate, reifyTyp, toSemCtx } from "./Normalization";
 import { Sem, SemPie, SemTyp } from "./Semantics";
 import { getDbl, SynNeu, SynPieNrm, SynTypNrm } from "./Syntax";

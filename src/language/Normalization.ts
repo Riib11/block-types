@@ -3,7 +3,7 @@
 */
 
 import { atRev, cons, map, nil, PList } from "../data/PList";
-import { Ctx } from "./Molding";
+import { Ctx } from "./Ctx";
 import { Sem, SemArr, SemTyp } from "./Semantics";
 import { Dbl, Id, predLevel, Syn, SynNeu, SynNrm, SynTypNrm, U_omega } from "./Syntax";
 

@@ -50,6 +50,25 @@ export function toArray<A>(l: PList<A>): A[] {
 export function app<A>(l1: PList<A>, l2: PList<A>): PList<A>
   {return foldl((l3, h) => cons(h, l3), l2, l1)}
 
+export function zip<A, B>(l1: PList<A>, l2: PList<B>): PList<[A, B]> {
+  switch (l1.case) {
+    case "nil": return nil();
+    case "cons": {
+      switch (l2.case) {
+        case "nil": return nil();
+        case "cons": return cons([l1.h, l2.h], zip(l1.t, l2.t));
+      }
+    }
+  }
+}
+
+export function shift<A>(l: PList<A>): [A, PList<A>] | undefined {
+  switch (l.case) {
+    case "nil": return undefined;
+    case "cons": return [l.h, l.t];
+  }
+}
+
 // Show
 
 export function showPList<A>(l: PList<A>, show: (a: A) => string = ((a: A) => a) as unknown as (a: A) => string): string {

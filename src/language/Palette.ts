@@ -5,6 +5,9 @@ import { SemTyp } from "./Semantics";
 import { Dbl, freshId, hole, predLevel, showSyn, Syn, SynNeu, SynVar } from "./Syntax";
 
 export function genPalette(shape: HoleShape): Syn[] {
+  console.log("genPalette");
+  console.log("shape"); console.log(shape);
+
   let T = shape.T;
   let plt: Syn[] = [];
 

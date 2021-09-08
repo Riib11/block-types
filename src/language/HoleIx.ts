@@ -1,3 +1,5 @@
+import { app, len, map, nil, PList, single, zip } from "../data/PList";
+
 export type HoleIx = {
   top: HoleIxTop,
   steps: HoleIxSteps
@@ -8,7 +10,9 @@ export type HoleIxTop
   | {case: "imp"}
   | {case: "pfb", subcase: "sig" | "imp", i: number}
 
-export type HoleIxSteps = HoleIxStep[];
+// export type HoleIxSteps = HoleIxStep[];
+
+export type HoleIxSteps = PList<HoleIxStep>;
 
 export type HoleIxStep
   = {case: "pie", subcase: "dom" | "cod"}
@@ -17,7 +21,13 @@ export type HoleIxStep
   | {case: "app", subcase: "app" | "arg"}
 
 export function topHoleIx(top: HoleIxTop): HoleIx
-  {return {top: top, steps: []}}
+  {return {top: top, steps: nil()}}
+
+export function stepHoleIx(ix: HoleIx, step: HoleIxStep): HoleIx
+  {return {top: ix.top, steps: stepHoleIxSteps(ix.steps, step)}}
+
+export function stepHoleIxSteps(steps: HoleIxSteps, step: HoleIxStep): HoleIxSteps
+  {return app(steps, single(step))}
 
 export function eqHoleIx(ix1: HoleIx, ix2: HoleIx): boolean {
   let checkTop = false;
@@ -32,9 +42,11 @@ export function eqHoleIx(ix1: HoleIx, ix2: HoleIx): boolean {
 
 export function eqHoleIxSteps(steps1: HoleIxSteps, steps2: HoleIxSteps): boolean {
   let res = true;
-  if (steps1.length !== steps2.length) return false;
-  for (let i = 0; i < steps1.length; i++)
-    res = res && eqHoleIxStep(steps1[i], steps2[i]);
+  if (len(steps1) !== len(steps2)) return false;
+  map(
+    item => res = res && eqHoleIxStep(item[0], item[1]),
+    zip(steps1, steps2)
+  );
   return res;
 }
 
@@ -45,11 +57,4 @@ export function eqHoleIxStep(step1: HoleIxStep, step2: HoleIxStep): boolean {
     case "let": return step1.case === step2.case && step1.subcase === step2.subcase;
     case "app": return step1.case === step2.case && step1.subcase === step2.subcase;
   }
-}
-
-export function cloneHoleIx(ix: HoleIx): HoleIx {
-  return {
-    top: ix.top,
-    steps: ix.steps.map(step => step)
-  };
 }

@@ -108,7 +108,7 @@ export default class App extends React.Component<Props, State> {
 
   renderContext(): JSX.Element {
     if (this.state.ix !== undefined) {
-      let ren = new Renderer(this, "display");
+      let ren = new Renderer(this, "panel");
       let ix: HoleIx = this.state.ix;
       let shape: HoleShape = mold(this.state, this.state.ix);
       let items: JSX.Element[] = [];
@@ -122,18 +122,26 @@ export default class App extends React.Component<Props, State> {
         },
         shape.ctx
       )
-      return (
-        <div className="context">
-          {items}
-        </div>
-      );
+      if (items.length !== 0) {
+        return (
+          <div className="context">
+            {items}
+          </div>
+        );
+      } else {
+        return (
+          <div className="context">
+            Ø
+          </div>
+        )
+      }
     } else return (<div></div>)
 
   }
 
   renderGoal(): JSX.Element {
     if (this.state.ix !== undefined) {
-      let ren = new Renderer(this, "display");
+      let ren = new Renderer(this, "panel");
       let shape: HoleShape = mold(this.state, this.state.ix);
       return (
         <div className="goal">
@@ -147,7 +155,7 @@ export default class App extends React.Component<Props, State> {
     if (this.state.ix !== undefined) {
       let ix: HoleIx = this.state.ix;
       let app = this;
-      let ren = new Renderer(this, "palette");
+      let ren = new Renderer(this, "panel");
       let shape: HoleShape = mold(this.state, this.state.ix);
       let plt = genPalette(shape);
       let pltElems: JSX.Element[] = [];
@@ -156,7 +164,7 @@ export default class App extends React.Component<Props, State> {
           update(this.state, {case: "fill", t});
           app.update()
         }
-        return (
+        pltElems.push(
           <div className="palette-item" onClick={onClick}>
             {ren.renderSyn(t, ix, ctxToIds(shape.ctx))}
           </div>

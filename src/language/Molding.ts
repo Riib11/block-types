@@ -4,7 +4,7 @@
 Basically is the functionality of `getHoles` that we've talked about, but with a nicer name.
 */
 
-import { atRev, cons, len, nil, PList } from "../data/PList";
+import { atRev, cons, len, nil, PList, shift } from "../data/PList";
 import { State } from "../State";
 import { Ctx } from "./Ctx";
 import { HoleIx, HoleIxSteps } from "./HoleIx";
@@ -39,30 +39,31 @@ export function mold(state: State, ix: HoleIx): HoleShape {
 // T: normalized type
 // t: normalized term with type T 
 export function moldSyn(T: SynTypNrm, t: Syn, steps: HoleIxSteps, ctx: Ctx = nil()): HoleShape {
-  function go(T: SynTypNrm, t: Syn, ctx: Ctx): HoleShape {
-    let step = steps.shift();
-    if (step !== undefined) {
+  function go(T: SynTypNrm, t: Syn, steps: HoleIxSteps, ctx: Ctx): HoleShape {
+    let sft = shift(steps);
+    if (sft !== undefined) {
+      let [step, stepsNew] = sft;
       switch (step.case) {
         case "pie": {
           let tUni = T as SynUni;
           let tPie = t as SynPieNrm;
           switch (step.subcase) {
-            case "dom": return go(tUni, tPie.dom, ctx);
-            case "cod": return go(tUni, tPie.cod, cons({id: tPie.id, T: tPie.cod}, ctx));
+            case "dom": return go(tUni, tPie.dom, stepsNew, ctx);
+            case "cod": return go(tUni, tPie.cod, stepsNew, cons({id: tPie.id, T: tPie.cod}, ctx));
           }
           break;
         }
         case "lam": {
           let TPie = T as SynPieNrm;
           let tLam = t as SynLam;
-          return go(TPie.dom, tLam.bod, cons({id: tLam.id, T: TPie.dom}, ctx));
+          return go(TPie.dom, tLam.bod, stepsNew, cons({id: tLam.id, T: TPie.dom}, ctx));
         }
         case "let": {
           let tLet = t as SynLet;
           switch (step.subcase) {
-            case "dom": return go(U_omega, tLet.dom, ctx);
-            case "arg": return go(normalizeTyp(tLet.dom), tLet.dom, ctx);
-            case "bod": return go(T, tLet.dom, cons({id: tLet.id, T: normalizeTyp(tLet.dom)}, ctx));
+            case "dom": return go(U_omega, tLet.dom, stepsNew, ctx);
+            case "arg": return go(normalizeTyp(tLet.dom), tLet.dom, stepsNew, ctx);
+            case "bod": return go(T, tLet.dom, stepsNew, cons({id: tLet.id, T: normalizeTyp(tLet.dom)}, ctx));
           }
           break;
         }
@@ -70,8 +71,8 @@ export function moldSyn(T: SynTypNrm, t: Syn, steps: HoleIxSteps, ctx: Ctx = nil
           let tApp = t as SynApp;
           let F = infer(tApp.app, ctx) as SynPieNrm;
           switch (step.subcase) {
-            case "app": return go(F, tApp.app, ctx);
-            case "arg": return go(F.dom, tApp.arg, ctx);
+            case "app": return go(F, tApp.app, stepsNew, ctx);
+            case "arg": return go(F.dom, tApp.arg, stepsNew, ctx);
           }
         }
       }
@@ -81,7 +82,7 @@ export function moldSyn(T: SynTypNrm, t: Syn, steps: HoleIxSteps, ctx: Ctx = nil
     }
   }
 
-  return go(T, t, ctx);
+  return go(T, t, steps, ctx);
 }
 
 export function moldSynTyp(T: Syn, ix: HoleIxSteps, ctx: Ctx = nil()): HoleShape

@@ -139,13 +139,13 @@ seeps into the "shapes" (i.e. type & context) of the holes.
 TODO: should the HoleShape store the type as a SemTyp or a Syn??
 */
 
-type Ctx = PList.PList<SemTyp>;
-type HoleShape = [SemTyp, Ctx];
+type HoleCtx = PList.PList<SemTyp>;
+type HoleShape = [SemTyp, HoleCtx];
 
 function mold(T: Syn, t: Syn): Map<HoleId, HoleShape> {
   let shapes: Map<HoleId, HoleShape> = new Map();
 
-  function goSem(T: SemTyp, t: Sem, ctx: Ctx = PList.nil()): void {
+  function goSem(T: SemTyp, t: Sem, ctx: HoleCtx = PList.nil()): void {
     switch (T.case) {
       case "uni": {
         let tTyp: SemTyp = t as SemTyp;
@@ -182,8 +182,8 @@ function mold(T: Syn, t: Syn): Map<HoleId, HoleShape> {
     }
   }
 
-  function goApp(t: SynNe, ctx: Ctx): SemTyp {
-    function go(t: SynNe, ctx: Ctx): SemPi {
+  function goApp(t: SynNe, ctx: HoleCtx): SemTyp {
+    function go(t: SynNe, ctx: HoleCtx): SemPi {
       switch (t.case) {
         case "app": {
           let F: SemPi = go(t.app, ctx);
