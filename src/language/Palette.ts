@@ -1,17 +1,14 @@
-import { app, atRev, cons, len, map, nil, PList, single, toArray } from "../data/PList";
+import { app, atRev, cons, len, map, nil, PList, rev, single, toArray } from "../data/PList";
 import { HoleShape } from "./Molding";
 import { evaluateTyp, reify, reifyTyp } from "./Normalization";
 import { SemTyp } from "./Semantics";
 import { Dbl, freshId, hole, predLevel, showSyn, Syn, SynNeu, SynVar } from "./Syntax";
 
 export function genPalette(shape: HoleShape): Syn[] {
-  console.log("genPalette");
-  console.log("shape"); console.log(shape);
-
   let T = shape.T;
   let plt: Syn[] = [];
 
-  // x ==> x ? ... ? where x : Π (x1 : A1) ... (xn : An) . B(x1, ..., xn)
+  // f ==> f ? ... ? where f : Π (x1 : A1) ... (xn : An) . B(x1, ..., xn)
   function genArgHoles(x: SynVar, T: SemTyp): SynNeu {
     switch (T.case) {
       case "pie":
@@ -25,12 +22,17 @@ export function genPalette(shape: HoleShape): Syn[] {
   }
 
   function paletteFromCtx(): void {
+    console.log("paletteFromCtx.shape:"); console.log(shape);
     let dbl: Dbl = 0;
     map(
-      item => plt.push(genArgHoles({case: "var", id: item.id, dbl}, evaluateTyp(item.T))),
-      shape.ctx
+      item => {
+        if (item.T.case !== "hol" && item.T.case !== "pie")
+          plt.push(genArgHoles({case: "var", id: item.id, dbl}, evaluateTyp(item.T)));
+        dbl++;
+      },
+      rev(shape.ctx)
     );
-    dbl++;
+    
   }
 
   switch (T.case) {
@@ -50,6 +52,7 @@ export function genPalette(shape: HoleShape): Syn[] {
     case "app": paletteFromCtx(); break; // TODO
     case "var": paletteFromCtx(); break; // TODO
   }
+  plt.reverse();
   return plt;
 }
 

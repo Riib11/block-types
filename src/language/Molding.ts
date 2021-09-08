@@ -11,7 +11,7 @@ import { HoleIx, HoleIxSteps } from "./HoleIx";
 import { infer } from "./Inference";
 import { evaluate, normalizeTyp, reflect } from "./Normalization";
 import { Sem, SemArr, SemPie, SemTyp } from "./Semantics";
-import { getDbl, Id, Syn, SynApp, SynHol, SynLam, SynLamNrm, SynLet, SynNeu, SynNeuNrm, SynNrm, SynPieNrm, SynTypNrm, SynUni, U_omega } from "./Syntax";
+import { Id, Syn, SynApp, SynHol, SynLam, SynLamNrm, SynLet, SynNeu, SynNeuNrm, SynNrm, SynPieNrm, SynTypNrm, SynUni, U_omega } from "./Syntax";
 
 /*
 ## Molding
@@ -49,14 +49,14 @@ export function moldSyn(T: SynTypNrm, t: Syn, steps: HoleIxSteps, ctx: Ctx = nil
           let tPie = t as SynPieNrm;
           switch (step.subcase) {
             case "dom": return go(tUni, tPie.dom, stepsNew, ctx);
-            case "cod": return go(tUni, tPie.cod, stepsNew, cons({id: tPie.id, T: tPie.cod}, ctx));
+            case "cod": return go(tUni, tPie.cod, stepsNew, cons({id: tPie.id, T: tPie.dom}, ctx));
           }
           break;
         }
         case "lam": {
           let TPie = T as SynPieNrm;
           let tLam = t as SynLam;
-          return go(TPie.dom, tLam.bod, stepsNew, cons({id: tLam.id, T: TPie.dom}, ctx));
+          return go(TPie.cod, tLam.bod, stepsNew, cons({id: tLam.id, T: TPie.dom}, ctx));
         }
         case "let": {
           let tLet = t as SynLet;

@@ -95,7 +95,7 @@ function evluImpl(t: SynTrm, G: PList.PList<SemTrm>): SemTrm {
     }
     case "let": return evluImpl(t.bod, PList.cons(evluImpl(t.arg, G), G));
     case "hol": return t;
-    case "var": return PList.atRev(t.ix, G);
+    case "var": return PList.atRev(t.ix, G) as SemTrm;
     case "app": return (evluImpl(t.app, G) as (s: SemTrm) => SemTrm)(evluImpl(t.arg, G));
   }
 }
@@ -247,7 +247,7 @@ export function mold(T: SynTrmNrm, t: SynTrmNrm): Map<HoleId, HoleShape> {
       }
       case "hol": return; // NOTE: cannot fill in term with hole type
       case "app": return;
-      case "var": mold(PList.atRev(T.ix, G), t); return;
+      case "var": mold(PList.atRev(T.ix, G) as SynTrmNrm, t); return;
     }
   }
   function goUniApp(t: SynTrmNeuNrm, G: PList.PList<SynTrmNrm>): SynTrmPieNrm {

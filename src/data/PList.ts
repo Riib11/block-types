@@ -9,14 +9,21 @@ export function cons<A>(h: A, t: PList<A>): PList<A> {return {case: "cons", h, t
 
 export function single<A>(h: A): PList<A> {return {case: "cons", h, t: nil()}}
 
-export function at<A>(i: number, l0: PList<A>): A {
-  function go(l: PList<A>): A {
-    switch (l.case) {
-      case "nil": throw new Error(`Index ${i} out of bounds in ${showPList(l0)}`);
-      case "cons": return i === 0 ? l.h : at(i - 1, l.t);
-    }      
+export function at<A>(i: number, l: PList<A>): A | undefined {
+  switch (l.case) {
+    case "nil": return undefined;
+    case "cons": return i === 0 ? l.h : at(i - 1, l.t);
+  }      
+}
+
+export function atRev<A>(i: number, l: PList<A>): A | undefined
+  {return at(len(l) - i - 1, l)}
+
+export function rev<A>(l: PList<A>): PList<A> {
+  switch (l.case) {
+    case "cons": return app(rev(l.t), single(l.h));
+    case "nil": return nil();
   }
-  return go(l0);
 }
 
 export function len<A>(l: PList<A>): number {
@@ -26,9 +33,6 @@ export function len<A>(l: PList<A>): number {
   }
 }
 
-export function atRev<A>(i: number, l: PList<A>): A {
-  return at(len(l) - i - 1, l);
-}
 
 export function foldl<A, B>(f: (b: B, a: A) => B, b: B, l: PList<A>): B {
   switch (l.case) {
@@ -47,8 +51,12 @@ export function toArray<A>(l: PList<A>): A[] {
   return arr;
 }
 
-export function app<A>(l1: PList<A>, l2: PList<A>): PList<A>
-  {return foldl((l3, h) => cons(h, l3), l2, l1)}
+export function app<A>(l1: PList<A>, l2: PList<A>): PList<A> {
+  switch (l1.case) {
+    case "nil": return l2;
+    case "cons": return cons(l1.h, app(l1.t, l2));
+  }
+}
 
 export function zip<A, B>(l1: PList<A>, l2: PList<B>): PList<[A, B]> {
   switch (l1.case) {

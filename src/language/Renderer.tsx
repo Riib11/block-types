@@ -77,7 +77,7 @@ export class Renderer {
           let bod = go(t.bod, stepHoleIx(ix, {case: "let", subcase: "bod"}), cons(t.id, ctx));
           return (<span className="term let">{ren.pncParL}{ren.pncLet} {ren.renderId(t.id, true)} {ren.pncCol} {dom} {ren.pncEq} {arg} {ren.pncIn} {bod}{ren.pncParR}</span>);
         }
-        case "app": return (<span className="term neu">{ren.pncParL}{goNeu(t,ctx)}{ren.pncParR}</span>);
+        case "app": return (<span className="term neu">{ren.pncParL}{goNeu(t, ctx)}{ren.pncParR}</span>);
         case "var": return (<span className="term neu">{goNeu(t, ctx)}</span>);
         case "hol": return (<span className="term hol">{ren.renderHole(ix)}</span>);
       }
@@ -121,7 +121,7 @@ export class Renderer {
   }
 
   renderVar(dbl: Dbl, ctx: Ids): JSX.Element {
-    return (<span className="var">{atRev(dbl, ctx).lbl}</span>)
+    return (<span className="var">{(atRev(dbl, ctx) as Id).lbl}</span>)
   }
 
   renderHole(ix: HoleIx): JSX.Element {
@@ -133,7 +133,7 @@ export class Renderer {
         } else {
           // transition: select this hole
           let onClick: MouseEventHandler = event => {
-            update(this.app.state, {case: "select", ix: ix});
+            update(this.app.state, {case: "select", ix});
             this.app.update();
           }
           return (<span className="holeId unfocussed" onClick={onClick}>{s}</span>)

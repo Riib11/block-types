@@ -63,12 +63,6 @@ export function predLevel(lvl: Level): Level {
   return lvl === "omega" ? lvl : lvl - 1;
 }
 
-// DeBruijn Levels
-
-export function getDbl<A>(dbl: Dbl, ctx: PList<A>): A
-  {return atRev(dbl, ctx);}
-
-
 // HoleId
 
 // let freshHoleIx = -1;

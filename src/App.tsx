@@ -1,7 +1,7 @@
 import React, { MouseEventHandler } from 'react';
 import { KeyboardEventHandler } from 'react';
 import './App.css';
-import { len, map } from './data/PList';
+import { len, map, rev } from './data/PList';
 import { ctxToIds } from './language/Ctx';
 import { HoleIx } from './language/HoleIx';
 import { HoleShape, mold } from './language/Molding';
@@ -120,7 +120,7 @@ export default class App extends React.Component<Props, State> {
             </div>
           )
         },
-        shape.ctx
+        rev(shape.ctx)
       )
       if (items.length !== 0) {
         return (
@@ -158,6 +158,7 @@ export default class App extends React.Component<Props, State> {
       let ren = new Renderer(this, "panel");
       let shape: HoleShape = mold(this.state, this.state.ix);
       let plt = genPalette(shape);
+      console.log("plt"); console.log(plt);
       let pltElems: JSX.Element[] = [];
       plt.forEach(t => {
         let onClick: MouseEventHandler = event => {

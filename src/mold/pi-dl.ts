@@ -71,7 +71,7 @@ function evaluate(t: Syn, ctx: Ctx = PList.nil()): Sem {
     case "let": return evaluate(t.bod, PList.cons(evaluate(t.arg, ctx), ctx));
     case "hol": return t;
     case "app": return (evaluate(t.app, ctx) as (s: Sem) => Sem)(evaluate(t.arg, ctx));
-    case "var": return PList.atRev(t.dbl, ctx);
+    case "var": return PList.atRev(t.dbl, ctx) as Sem;
   }
 }
 
@@ -199,7 +199,7 @@ function mold(T: Syn, t: Syn): Map<HoleId, HoleShape> {
         goSem(F.dom, t.arg, ctx);
         return F.bod(t.arg) as SemTyp;
       }
-      case "var": return PList.atRev(t.dbl, ctx);
+      case "var": return PList.atRev(t.dbl, ctx) as SemTyp;
     }
   }
 

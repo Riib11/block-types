@@ -1,4 +1,4 @@
-import { app, len, map, nil, PList, single, zip } from "../data/PList";
+import { app, cons, len, map, nil, PList, single, zip } from "../data/PList";
 
 export type HoleIx = {
   top: HoleIxTop,
@@ -28,6 +28,7 @@ export function stepHoleIx(ix: HoleIx, step: HoleIxStep): HoleIx
 
 export function stepHoleIxSteps(steps: HoleIxSteps, step: HoleIxStep): HoleIxSteps
   {return app(steps, single(step))}
+  // {return cons(step, steps)}
 
 export function eqHoleIx(ix1: HoleIx, ix2: HoleIx): boolean {
   let checkTop = false;
