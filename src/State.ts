@@ -1,68 +1,149 @@
-import { getHoleIds, HoleId, Id, Prgm, renameId, Syn, SynNeu } from "./language/Syntax";
+import { len, nil, shift } from "./data/PList";
+import { Ctx, eqCtx } from "./language/Ctx";
+import { HoleIx, HoleIxSteps } from "./language/HoleIx";
+import { infer } from "./language/Inference";
+import { HoleShape, mold } from "./language/Molding";
+import { evaluate, evaluateTyp, normalize, normalizeTyp, reifyTyp } from "./language/Normalization";
+import { SemTyp } from "./language/Semantics";
+import { eqSyn, Id, isConcrete, showSyn, Syn, SynApp, SynLam, SynLamNrm, SynLet, SynNeu, SynPie, SynPieNrm, SynTypNrm } from "./language/Syntax";
 
 export type State = {
-  p: Prgm, // current program
-  id: HoleId | undefined // focussed HoleId or unfocussed
-};
+  sig: Syn; // top-level type
+  imp: Syn; // top-level term
+  pfbs: Prefab[]; // prefabs
+  ix: HoleIx | undefined, // focussed hole id
+}
+
+export type Prefab = {
+  ctx: Ctx,
+  T: Syn,
+  t: Syn,
+}
 
 export type Trans
-  = {case: "fill", id: HoleId, t: Syn}
-  | {case: "select", id: HoleId}
-  | {case: "rename", id: Id, lbl: string}
-;
+  = {case: "select", ix: HoleIx} // select a hole as the new focussed hole
+  | {case: "fill", t: Syn} // fill the focussed hole with a term
+  | {case: "fill prefab", i: number} // attempt to fill the focussed hole with the prefab at index i
+  | {case: "new prefab", pfb: Prefab} // create a new prefab
+  | {case: "rename", id: Id, lbl: string} // rename an Id
 
-export function update(state: State, trans: Trans): State {
+export function update(state: State, trans: Trans): void {
+  console.log("================================================")
+  console.log("update");
+  console.log("state:"); console.log(state);
+  console.log("trans:"); console.log(trans);
+
   switch (trans.case) {
-    case "fill": {
-      if (state.id !== undefined) {
-        console.log(`update: fill hole ${trans.id.uid} with ${trans.t.case}`)
-        let holeIx = getHoleIds(state.p).indexOf(state.id);
-        let p = fillHole(state.p, trans.id, trans.t);
-        let holeIds = getHoleIds(p);
-        let id = holeIds.length !== 0 ? holeIds[holeIx] : undefined;
-        return {
-          p,
-          id
-        }
-      } else return state;
-    }
     case "select": {
-      console.log(`update: select hole ${trans.id.uid}`);
-      return {
-        p: state.p,
-        id: trans.id
+      state.ix = trans.ix;
+      break;
+    }
+    case "fill": {
+      if (state.ix === undefined) {
+        console.log("You must select a hole before filling.");
+        break;
       }
+      switch (state.ix.top.case) {
+        case "sig": state.sig = fillSyn(state.sig, trans.t, state.ix.steps); break;
+        case "imp": state.imp = fillSyn(state.imp, trans.t, state.ix.steps); break;
+        case "pfb": {
+          let pfb = state.pfbs[state.ix.top.i];
+          switch (state.ix.top.subcase) {
+            case "sig": pfb.T = fillSyn(pfb.T, trans.t, state.ix.steps); break;
+            case "imp": pfb.t = fillSyn(pfb.t, trans.t, state.ix.steps); break;
+          }
+        }
+      }
+      // unfocus
+      state.ix = undefined;
+      break;
+    }
+    case "fill prefab": {
+      if (state.ix === undefined) {
+        console.log("You must select a hole before filling.");
+        break;
+      }
+      let shape = mold(state, state.ix);
+      let pfb = state.pfbs[trans.i]
+      // check that types matche
+      if (!eqSyn(shape.T, pfb.T)) {
+        console.log("You cannot fill a hole with a prefab of a different type.");
+        break;
+      }
+      // check that contexts match
+      if (!eqCtx(shape.ctx, shape.ctx)) {
+        console.log("You cannot fill a hole with a prefab from a different context.");
+        break;
+      }
+      // fill
+      switch (state.ix.top.case) {
+        case "sig": state.sig = fillSyn(state.sig, pfb.t, state.ix.steps); break;
+        case "imp": state.imp = fillSyn(state.imp, pfb.t, state.ix.steps); break;
+        case "pfb": {
+          let pfb = state.pfbs[state.ix.top.i];
+          switch (state.ix.top.subcase) {
+            case "sig": pfb.T = fillSyn(pfb.T, pfb.t, state.ix.steps); break;
+            case "imp": pfb.t = fillSyn(pfb.t, pfb.t, state.ix.steps); break;
+          }
+        }
+      }
+      // delete used prefab
+      state.pfbs.splice(trans.i, 1);
+      // unfocus
+      state.ix = undefined;
+      break;
+    }
+    case "new prefab": {
+      console.log("trans.p:"); console.log(trans.pfb);
+      state.pfbs.push(trans.pfb);
+      break;
     }
     case "rename": {
-      console.log(`rename: from ${trans.id.lbl} to ${trans.lbl}`);
       trans.id.lbl = trans.lbl;
-      return {
-        p: state.p,
-        id: undefined
-      }
+      break;
     }
   }
 }
 
-export function fillHole(p: Prgm, id: HoleId, a: Syn): Prgm {
-  function goSynNeu(t: SynNeu): SynNeu {
-    switch (t.case) {
-      case "var": return t;
-      case "app": return {case: "app", app: goSynNeu(t.app), arg: goSyn(t.arg)};
+export function fillSyn(t: Syn, s: Syn, steps: HoleIxSteps): Syn {
+  function go(t: Syn, steps: HoleIxSteps): Syn {
+    let sft = shift(steps);
+    if (sft !== undefined) {
+      let [step, stepsNew] = sft;
+      switch (step.case) {
+        case "pie": {
+          let tPie = t as SynPie;
+          switch (step.subcase) {
+            case "dom": return {case: "pie", id: tPie.id, dom: go(tPie.dom, stepsNew), cod: tPie.cod};
+            case "cod": return {case: "pie", id: tPie.id, dom: tPie.dom, cod: go(tPie.cod, stepsNew)};
+          }
+          break;
+        }
+        case "lam": {
+          let tLam = t as SynLam;
+          return {case: "lam", id: tLam.id, bod: go(tLam.bod, stepsNew)}
+        }
+        case "let": {
+          let tLet = t as SynLet;
+          switch (step.subcase) {
+            case "dom": return {case: "let", id: tLet.id, dom: go(tLet.dom, stepsNew), arg: tLet.arg, bod: tLet.bod};
+            case "arg": return {case: "let", id: tLet.id, dom: tLet.dom, arg: go(tLet.arg, stepsNew), bod: tLet.bod};
+            case "bod": return {case: "let", id: tLet.id, dom: tLet.dom, arg: tLet.arg, bod: go(tLet.bod, stepsNew)};
+          }
+          break;
+        }
+        case "app": {
+          let tApp = t as SynApp;
+          switch (step.subcase) {
+            case "app": return {case: "app", app: go(tApp.app, stepsNew) as SynNeu, arg: tApp.arg};
+            case "arg": return {case: "app", app: tApp.app, arg: go(tApp.arg, stepsNew)};
+          }
+        }
+      }
+    } else {
+      // substitute here
+      return s;
     }
   }
-  function goSyn(t: Syn): Syn {
-    switch (t.case) {
-      case "uni": return t;
-      case "pie": return {case: "pie", id: t.id, dom: goSyn(t.dom), cod: goSyn(t.cod)};
-      case "lam": return {case: "lam", id: t.id, bod: goSyn(t.bod)};
-      case "let": return {case: "let", id: t.id, dom: goSyn(t.dom), arg: goSyn(t.arg), bod: goSyn(t.bod)};
-      case "hol": return (t.id === id)? a : t;
-      case "app":
-      case "var": return goSynNeu(t)
-    }
-  }
-  switch (p.case) {
-    case "jud": return {case: "jud", t: goSyn(p.t), T: goSyn(p.T)};
-  }
+  return go(t, steps);
 }

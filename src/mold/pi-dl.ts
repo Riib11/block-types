@@ -71,7 +71,7 @@ function evaluate(t: Syn, ctx: Ctx = PList.nil()): Sem {
     case "let": return evaluate(t.bod, PList.cons(evaluate(t.arg, ctx), ctx));
     case "hol": return t;
     case "app": return (evaluate(t.app, ctx) as (s: Sem) => Sem)(evaluate(t.arg, ctx));
-    case "var": return PList.atRev(t.dbl, ctx);
+    case "var": return PList.atRev(t.dbl, ctx) as Sem;
   }
 }
 
@@ -127,7 +127,7 @@ function normalize(T: Syn, t: Syn): Syn
   {return reify(evaluate(T) as SemTyp, evaluate(t))}
 
 // T: syntactic type
-function normalizeType(T: Syn): Syn
+function normalizeTyp(T: Syn): Syn
   {return normalize({case: "uni", lvl: -1}, T)}
 
 /*
@@ -142,7 +142,7 @@ TODO: should the HoleShape store the type as a SemTyp or a Syn??
 type HoleCtx = PList.PList<SemTyp>;
 type HoleShape = [SemTyp, HoleCtx];
 
-export function mold(T: Syn, t: Syn): Map<HoleId, HoleShape> {
+function mold(T: Syn, t: Syn): Map<HoleId, HoleShape> {
   let shapes: Map<HoleId, HoleShape> = new Map();
 
   function goSem(T: SemTyp, t: Sem, ctx: HoleCtx = PList.nil()): void {
@@ -199,7 +199,7 @@ export function mold(T: Syn, t: Syn): Map<HoleId, HoleShape> {
         goSem(F.dom, t.arg, ctx);
         return F.bod(t.arg) as SemTyp;
       }
-      case "var": return PList.atRev(t.dbl, ctx);
+      case "var": return PList.atRev(t.dbl, ctx) as SemTyp;
     }
   }
 

@@ -2,32 +2,36 @@
 # Normalization by evaluation
 */
 
-import { atRev, cons, nil, PList } from "../data/PList";
-import { Sem, SemTyp } from "./Semantics";
-import { Dbl, Id, predLevel, Syn, SynNeu } from "./Syntax";
+import { atRev, cons, map, nil, PList } from "../data/PList";
+import { Ctx } from "./Ctx";
+import { Sem, SemArr, SemTyp } from "./Semantics";
+import { Dbl, Id, predLevel, Syn, SynNeu, SynNrm, SynTypNrm, U_omega } from "./Syntax";
 
 /*
 ## Types
 */
 
-type Ctx = PList<Sem>;
+export type SemCtx = PList<Sem>;
+
+export function toSemCtx(ctx: Ctx): SemCtx
+  {return map(item => item.T, ctx)}
 
 /*
 ## Normalization
 */
 
-export function normalize(T: Syn, t: Syn): Syn
+export function normalize(T: Syn, t: Syn): SynNrm
   {return reify(evaluate(T) as SemTyp, evaluate(t))}
 
 // T: syntactic type
-export function normalizeType(T: Syn): Syn
-  {return normalize({case: "uni", lvl: "omega"}, T)}
+export function normalizeTyp(T: Syn): SynTypNrm
+  {return normalize(U_omega, T) as SynTypNrm}
 
 /*
 ## Evaluation
 */
 
-export function evaluate(t: Syn, ctx: Ctx = nil()): Sem {
+export function evaluate(t: Syn, ctx: SemCtx = nil()): Sem {
   switch (t.case) {
     case "uni": return t;
     case "pie":
@@ -35,15 +39,18 @@ export function evaluate(t: Syn, ctx: Ctx = nil()): Sem {
         case: "pie",
         id: t.id,
         dom: evaluate(t.dom, ctx) as SemTyp,
-        cod: (a: Sem) => evaluate(t.cod, cons(a, ctx as Ctx))
+        cod: (a: Sem) => evaluateTyp(t.cod, cons(a, ctx as SemCtx))
       };
-    case "lam": return (a: Sem) => evaluate(t.bod, cons(a, ctx as Ctx));
+    case "lam": return (a: Sem) => evaluate(t.bod, cons(a, ctx as SemCtx));
     case "let": return evaluate(t.bod, cons(evaluate(t.arg, ctx), ctx));
     case "hol": return t;
     case "app": return (evaluate(t.app, ctx) as (s: Sem) => Sem)(evaluate(t.arg, ctx));
-    case "var": return atRev(t.dbl, ctx);
+    case "var": return t;
   }
 }
+
+export function evaluateTyp(T: Syn, ctx: SemCtx = nil()): SemTyp
+  {return evaluate(T, ctx) as SemTyp}
 
 /*
 ## Reflection
@@ -68,43 +75,45 @@ export function reflect(T: SemTyp, t: SynNeu, dbl: Dbl = 0): Sem {
 ## Reification
 */
 
-export function reify(T: SemTyp, t: Sem, dbl: Dbl = 0): Syn {
+export function reify(T: SemTyp, t: Sem, dbl: Dbl = 0): SynNrm {
   switch (T.case) {
     case "uni": {
-      let tTyp: SemTyp = t as SemTyp;
-      switch (tTyp.case) {
-        case "uni": return tTyp;
+      let tSemTyp: SemTyp = t as SemTyp;
+      switch (tSemTyp.case) {
+        case "uni": return tSemTyp;
         case "pie":
           return {
             case: "pie",
-            id: tTyp.id,
-            dom: reify({case: "uni", lvl: predLevel(T.lvl)}, tTyp.dom, dbl),
-            cod: reify({case: "uni", lvl: predLevel(T.lvl)}, tTyp.cod(reflect(tTyp.dom, {case: "var", id: tTyp.id, dbl}, dbl + 1)), dbl + 1)
+            id: tSemTyp.id,
+            dom: reify({case: "uni", lvl: predLevel(T.lvl)}, tSemTyp.dom, dbl) as SynTypNrm,
+            cod: reify({case: "uni", lvl: predLevel(T.lvl)}, tSemTyp.cod(reflect(tSemTyp.dom, {case: "var", id: tSemTyp.id, dbl}, dbl + 1)), dbl + 1)  as SynTypNrm
           }
-        case "hol": 
         case "app":
-        case "var": return tTyp;
+        case "var":
+        case "hol": return tSemTyp as SynTypNrm;
       }
       break;
     }
-    case "pie":
+    case "pie": {
+      let tSemArr: SemArr = t as SemArr;
       return {
         case: "lam",
         id: T.id,
         bod:
           reify(
             T.cod(reflect(T.dom, {case: "var", id: T.id, dbl}, dbl + 1)) as SemTyp,
-            (t as (a: Sem) => Sem)(reflect(T.dom, {case: "var", id: T.id, dbl}, dbl + 1))
+            tSemArr(reflect(T.dom, {case: "var", id: T.id, dbl}, dbl + 1))
           )
       }
+    }
     case "hol":
     case "app":
-    case "var": return t as Syn;
+    case "var": return t as SynNrm;
   }
 }
 
-export function reifyType(T: SemTyp, dbl: Dbl = 0): Syn
-  {return reify({case: "uni", lvl: "omega"}, T, dbl)}
+export function reifyTyp(T: SemTyp, dbl: Dbl = 0): SynTypNrm
+  {return reify(U_omega, T, dbl) as SynTypNrm}
 
 // /*
 // # Examples

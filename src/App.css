@@ -21,13 +21,44 @@
   position: fixed;
   width: calc(100vw - 420px);
   height: 100%;
-  padding: 10px;
-  overflow: scroll;
-  white-space: nowrap;
   line-height: 125%;
 
   font-family: "Courier New", Courier, monospace;
   box-shadow: -1px 0 0 0 black inset;
+}
+
+.display > .main {
+  padding: 10px;
+  overflow: scroll;
+  white-space: nowrap;
+}
+
+.display > .prefabs {
+  padding: 10px;
+  padding-bottom: 0;
+  overflow: scroll;
+  white-space: nowrap;
+
+  box-shadow: 0 0 0 1px black;
+}
+
+.prefab {
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.prefab > .submit {
+  width: 20px;
+  height: 20px;
+  background-color: rgb(141, 141, 255);
+}
+.prefab > .submit:hover {
+  cursor: pointer;
+  background-color: rgb(0, 0, 255);
+}
+
+.prefab > .box {
+  box-shadow: 0 0 0 1px black;
 }
 
 /* Panel */
@@ -57,6 +88,9 @@
 
 .context {
   font-family: "Courier New", Courier, monospace;
+}
+
+.context-item {
 }
 
 /* Goal */
@@ -97,6 +131,7 @@
 
 .term {
   vertical-align: text-top;
+  display: inline-block;
 }
 .term.uni {
 }
@@ -117,13 +152,17 @@
 .term.let.head {
 }
 .term.let.tail {
-  display: inline-block;
+  /* display: inline-block; */
 }
 .term.hol {
 }
 .term.id {
   min-width: 1ch;
-  box-shadow: 0 -4px 0 0 rgb(208, 206, 164) inset;
+  color: blue;
+  font-style: italic;
+}
+.term.id.input:focus {
+  /* box-shadow: 0 -2px 0 0 blue inset; */
 }
 .term.id.input {
   display: inline-block;
@@ -139,51 +178,50 @@
 
 .holeId.unfocussed {
   cursor: pointer;
-  box-shadow: 0 0 4px 1px blue inset;
+  box-shadow: 0 0 0 2px red inset;
   padding: 0 2px;
 }
 .holeId.focussed {
   background-color: green;
-  box-shadow: 0 0 4px 0 green;
   color: white;
   padding: 0 2px;
 }
 
 /* Parentheses */
 
-.term > .pnc.paren.left:hover,
-.term > .pnc.paren.left:hover ~ .pnc.paren.right {
-  background-color: red;
+.term > .syn.paren.left:hover,
+.term > .syn.paren.left:hover ~ .syn.paren.right {
+  background-color: green;
   color: white;
 }
 
 /* Syntax */
 
-.pnc.paren {
+.syn.paren {
   font-weight: bold;
 }
-.pnc.col {
+.syn.col {
   font-weight: bold;
 }
-.pnc.dot {
+.syn.dot {
   font-weight: bold;
 }
-.pnc.eq {
+.syn.eq {
   font-weight: bold;
 }
-.pnc.let {
+.syn.let {
   font-weight: bold;
 }
-.pnc.pi {
+.syn.pi {
   font-weight: bold;
 }
-.pnc.lam {
+.syn.lam {
   font-weight: bold;
 }
-.pnc.uni {
+.syn.uni {
   font-weight: bold;
 }
-.pnc.in {
+.syn.in {
   font-weight: bold;
 }
 
