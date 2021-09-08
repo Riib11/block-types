@@ -2,7 +2,6 @@ import React, { MouseEventHandler } from 'react';
 import { KeyboardEventHandler } from 'react';
 import './App.css';
 import { len, map, rev } from './data/PList';
-import { ctxToIds } from './language/Ctx';
 import { HoleIx } from './language/HoleIx';
 import { HoleShape, mold } from './language/Molding';
 import { evaluate, reifyTyp } from './language/Normalization';
@@ -108,15 +107,17 @@ export default class App extends React.Component<Props, State> {
 
   renderContext(): JSX.Element {
     if (this.state.ix !== undefined) {
+      console.log("renderContext");
       let ren = new Renderer(this, "panel");
       let ix: HoleIx = this.state.ix;
-      let shape: HoleShape = mold(this.state, this.state.ix);
+      let shape: HoleShape = mold(this.state, ix);
+      console.log("shape:"); console.log(shape);
       let items: JSX.Element[] = [];
       map(
         item => {
           items.push(
             <div className="context-item">
-              {item.id.lbl} : {ren.renderSyn(item.T, ix, ctxToIds(shape.ctx))}
+              {item.id.lbl} : {ren.renderSyn(item.T, ix)}
             </div>
           )
         },
@@ -145,7 +146,7 @@ export default class App extends React.Component<Props, State> {
       let shape: HoleShape = mold(this.state, this.state.ix);
       return (
         <div className="goal">
-          {ren.renderSyn(shape.T, this.state.ix, ctxToIds(shape.ctx))}
+          {ren.renderSyn(shape.T, this.state.ix)}
         </div>
       )
     } else return (<div></div>)
@@ -167,7 +168,7 @@ export default class App extends React.Component<Props, State> {
         }
         pltElems.push(
           <div className="palette-item" onClick={onClick}>
-            {ren.renderSyn(t, ix, ctxToIds(shape.ctx))}
+            {ren.renderSyn(t, ix)}
           </div>
         );
       });

@@ -1,4 +1,5 @@
 import { app, atRev, cons, len, map, nil, PList, rev, single, toArray } from "../data/PList";
+import { ctxToSemCtx } from "./Ctx";
 import { HoleShape } from "./Molding";
 import { evaluateTyp, reify, reifyTyp } from "./Normalization";
 import { SemTyp } from "./Semantics";
@@ -22,12 +23,15 @@ export function genPalette(shape: HoleShape): Syn[] {
   }
 
   function paletteFromCtx(): void {
-    console.log("paletteFromCtx.shape:"); console.log(shape);
+    // console.log("paletteFromCtx.shape:"); console.log(shape);
     let dbl: Dbl = 0;
     map(
       item => {
+        // console.log("item:"); console.log(item);
+        // console.log("evaluateTyp(item.T):"); console.log(evaluateTyp(item.T, ctxToSemCtx(shape.ctx)));
+        let semCtx = ctxToSemCtx(shape.ctx);
         if (item.T.case !== "hol" && item.T.case !== "pie")
-          plt.push(genArgHoles({case: "var", id: item.id, dbl}, evaluateTyp(item.T)));
+          plt.push(genArgHoles({case: "var", id: item.id, dbl}, evaluateTyp(item.T, semCtx)));
         dbl++;
       },
       rev(shape.ctx)
@@ -45,7 +49,7 @@ export function genPalette(shape: HoleShape): Syn[] {
       break;
     }
     case "pie": {
-      plt.push({case: "lam", id: freshId(), bod: hole});
+      plt.push({case: "lam", id: T.id, bod: hole});
       break;
     }
     case "hol": break; // a term hole's surface type hole must be filled first

@@ -1,7 +1,7 @@
 import { ChangeEventHandler } from "react";
 import { MouseEventHandler } from "react";
 import App from "../App";
-import { atRev, cons, nil, PList } from "../data/PList";
+import { at, atRev, cons, nil, PList } from "../data/PList";
 import { Prefab, update } from "../State";
 import { Ids } from "./Ctx";
 import { eqHoleIx, HoleIx, HoleIxSteps, stepHoleIx, topHoleIx } from "./HoleIx";
@@ -57,42 +57,42 @@ export class Renderer {
 
   // TODO: use an immutable queue for ix.steps rather than this messy mutable stuff. I seems that its getting mixed up somewhere, and doesn't update the state's ix properly...
 
-  renderSyn(t: Syn, ix: HoleIx, ctx: Ids = nil()): JSX.Element {
+  renderSyn(t: Syn, ix: HoleIx): JSX.Element {
     let ren = this;
-    function go(t: Syn, ix: HoleIx, ctx: Ids): JSX.Element {
+    function go(t: Syn, ix: HoleIx): JSX.Element {
       switch (t.case) {
         case "uni": return (<span className="term uni">{ren.pncUni}<sub>{ren.renderLevel(t.lvl)}</sub></span>);
         case "pie": {
-          let dom = go(t.dom, stepHoleIx(ix, {case: "pie", subcase: "dom"}), ctx);
-          let cod = go(t.cod, stepHoleIx(ix, {case: "pie", subcase: "cod"}), cons(t.id, ctx));
+          let dom = go(t.dom, stepHoleIx(ix, {case: "pie", subcase: "dom"}));
+          let cod = go(t.cod, stepHoleIx(ix, {case: "pie", subcase: "cod"}));
           return (<span className="term pi">{ren.pncParL}{ren.pncPie} {ren.renderId(t.id, true)} {ren.pncCol} {dom} {ren.pncDot} {cod}{ren.pncParR}</span>);
         }
         case "lam": {
-          let bod = go(t.bod, stepHoleIx(ix, {case: "lam"}), cons(t.id, ctx));
+          let bod = go(t.bod, stepHoleIx(ix, {case: "lam"}));
           return (<span className="term lam">{ren.pncParL}{ren.pncLam} {ren.renderId(t.id, true)} {ren.pncDot} {bod}{ren.pncParR}</span>);
         }
         case "let": {
-          let dom = go(t.dom, stepHoleIx(ix, {case: "let", subcase: "dom"}), ctx);
-          let arg = go(t.arg, stepHoleIx(ix, {case: "let", subcase: "arg"}), ctx);
-          let bod = go(t.bod, stepHoleIx(ix, {case: "let", subcase: "bod"}), cons(t.id, ctx));
+          let dom = go(t.dom, stepHoleIx(ix, {case: "let", subcase: "dom"}));
+          let arg = go(t.arg, stepHoleIx(ix, {case: "let", subcase: "arg"}));
+          let bod = go(t.bod, stepHoleIx(ix, {case: "let", subcase: "bod"}));
           return (<span className="term let">{ren.pncParL}{ren.pncLet} {ren.renderId(t.id, true)} {ren.pncCol} {dom} {ren.pncEq} {arg} {ren.pncIn} {bod}{ren.pncParR}</span>);
         }
-        case "app": return (<span className="term neu">{ren.pncParL}{goNeu(t, ctx)}{ren.pncParR}</span>);
-        case "var": return (<span className="term neu">{goNeu(t, ctx)}</span>);
+        case "app": return (<span className="term neu">{ren.pncParL}{goNeu(t)}{ren.pncParR}</span>);
+        case "var": return (<span className="term neu">{goNeu(t)}</span>);
         case "hol": return (<span className="term hol">{ren.renderHole(ix)}</span>);
       }
     }
-    function goNeu(t: SynNeu, ctx: Ids): JSX.Element {
+    function goNeu(t: SynNeu): JSX.Element {
       switch (t.case) {
         case "app": {
-          let app = go(t.app, stepHoleIx(ix, {case: "app", subcase: "app"}), ctx);
-          let arg = go(t.arg, stepHoleIx(ix, {case: "app", subcase: "arg"}), ctx);
+          let app = go(t.app, stepHoleIx(ix, {case: "app", subcase: "app"}));
+          let arg = go(t.arg, stepHoleIx(ix, {case: "app", subcase: "arg"}));
           return (<span className="term app">{app} {arg}</span>);
         }
-        case "var": return (<span className="term var">{ren.renderVar(t.dbl, ctx)}</span>);
+        case "var": return (<span className="term var">{ren.renderId(t.id)}</span>);
       }
     }
-    return go(t, ix, ctx);
+    return go(t, ix);
   }
 
   renderLevel(lvl: Level): JSX.Element
@@ -120,9 +120,9 @@ export class Renderer {
     }
   }
 
-  renderVar(dbl: Dbl, ctx: Ids): JSX.Element {
-    return (<span className="var">{(atRev(dbl, ctx) as Id).lbl}</span>)
-  }
+  // renderVar(dbl: Dbl, ctx: Ids): JSX.Element {
+  //   return (<span className="var">{(atRev(dbl, ctx) as Id).lbl}</span>)
+  // }
 
   renderHole(ix: HoleIx): JSX.Element {
     let s = `?`;

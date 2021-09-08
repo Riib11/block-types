@@ -114,6 +114,7 @@
 
 .term {
   vertical-align: text-top;
+  display: inline-block;
 }
 .term.uni {
 }
@@ -134,7 +135,7 @@
 .term.let.head {
 }
 .term.let.tail {
-  display: inline-block;
+  /* display: inline-block; */
 }
 .term.hol {
 }

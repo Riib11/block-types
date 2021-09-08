@@ -45,7 +45,7 @@ export function evaluate(t: Syn, ctx: SemCtx = nil()): Sem {
     case "let": return evaluate(t.bod, cons(evaluate(t.arg, ctx), ctx));
     case "hol": return t;
     case "app": return (evaluate(t.app, ctx) as (s: Sem) => Sem)(evaluate(t.arg, ctx));
-    case "var": return atRev(t.dbl, ctx) as Sem;
+    case "var": return t;
   }
 }
 
