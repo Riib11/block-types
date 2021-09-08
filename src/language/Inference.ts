@@ -1,19 +1,15 @@
-import { PList } from "../data/PList";
-import { HoleCtx } from "./Molding";
-import { evaluate } from "./Normalization";
-import { Sem, SemTyp } from "./Semantics";
-import { getDbl, SynNeu } from "./Syntax";
+import { len, PList } from "../data/PList";
+import { Ctx } from "./Molding";
+import { evaluate, reifyTyp, toSemCtx } from "./Normalization";
+import { Sem, SemPie, SemTyp } from "./Semantics";
+import { getDbl, SynNeu, SynPieNrm, SynTypNrm } from "./Syntax";
 
 // Infer the result type of an application.
-export function infer(t: SynNeu, ctx: HoleCtx): SemTyp {
+export function infer(t: SynNeu, ctx: Ctx): SynTypNrm {
   switch (t.case) {
     case "app": {
-      let F = infer(t.app, ctx);
-      let ctxSem = ctx as PList<Sem>;
-      switch (F.case) {
-        case "pie": return F.cod(evaluate(t.arg, ctxSem)) as SemTyp;
-        default: throw new Error("Incorrectly normalized type.");
-      }
+      let F = evaluate(infer(t.app, ctx), toSemCtx(ctx)) as SemPie;
+      return reifyTyp(F.cod(t.arg), len(ctx));
     }
     case "var": return getDbl(t.dbl, ctx).T;
   }

@@ -8,7 +8,7 @@ export type DO_NOT_IMPORT = {};
 // // G: goal type
 // // T: type of v
 // // v: variable
-// export function paletteVar(ctx: HoleCtx, G: Syn, T: Syn, v: SynVar): Syn | undefined {
+// export function paletteVar(ctx: Ctx, G: Syn, T: Syn, v: SynVar): Syn | undefined {
 //   let dblLoc: Dbl = len(ctx);
 
 //   // Unroll
@@ -100,7 +100,7 @@ export type DO_NOT_IMPORT = {};
 //       let arg = sub.get(dbl);
 //       t = arg !== undefined ?
 //             {case: "app", app: t, arg} :
-//             {case: "app", app: t, arg: freshHole()};
+//             {case: "app", app: t, arg: hole};
 //     });
 //     return t;
 //   } catch (e) {
@@ -126,7 +126,7 @@ export type DO_NOT_IMPORT = {};
 
 // // T: goal type (cannot be a Π since required η-expansion)
 // // S: variable type
-// export function compatibility(T: Syn, S: Syn, v: SynVar, ctx: HoleCtx): Syn | undefined {
+// export function compatibility(T: Syn, S: Syn, v: SynVar, ctx: Ctx): Syn | undefined {
 //   // Π x : A . Π y : B . C(x ,y)  ==>  [A, B, C(x, y)]
 //   function unroll(T: Syn): Syn[] {
 //     let unr: Syn[] = [];

@@ -12,4 +12,5 @@ export type Sem = SemTyp | SemArr | Syn;
 //------------------------------------------------------------------------------
 export type SemTyp = SynUni | SemPie | SynNeu | SynHol;
 export type SemArr = (t: Sem) => Sem;
-export type SemPie = {case: "pie", id: Id, dom: SemTyp, cod: SemArr}
+export type SemTypArr = (t: Sem) => SemTyp;
+export type SemPie = {case: "pie", id: Id, dom: SemTyp, cod: SemTypArr}

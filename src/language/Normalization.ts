@@ -2,15 +2,19 @@
 # Normalization by evaluation
 */
 
-import { atRev, cons, nil, PList } from "../data/PList";
+import { atRev, cons, map, nil, PList } from "../data/PList";
+import { Ctx } from "./Molding";
 import { Sem, SemArr, SemTyp } from "./Semantics";
-import { Dbl, Id, predLevel, Syn, SynNeu, SynNrm, SynTypNrm } from "./Syntax";
+import { Dbl, Id, predLevel, Syn, SynNeu, SynNrm, SynTypNrm, U_omega } from "./Syntax";
 
 /*
 ## Types
 */
 
-type Ctx = PList<Sem>;
+export type SemCtx = PList<Sem>;
+
+export function toSemCtx(ctx: Ctx): SemCtx
+  {return map(item => item.T, ctx)}
 
 /*
 ## Normalization
@@ -20,14 +24,14 @@ export function normalize(T: Syn, t: Syn): SynNrm
   {return reify(evaluate(T) as SemTyp, evaluate(t))}
 
 // T: syntactic type
-export function normalizeType(T: Syn): SynTypNrm
-  {return normalize({case: "uni", lvl: "omega"}, T) as SynTypNrm}
+export function normalizeTyp(T: Syn): SynTypNrm
+  {return normalize(U_omega, T) as SynTypNrm}
 
 /*
 ## Evaluation
 */
 
-export function evaluate(t: Syn, ctx: Ctx = nil()): Sem {
+export function evaluate(t: Syn, ctx: SemCtx = nil()): Sem {
   switch (t.case) {
     case "uni": return t;
     case "pie":
@@ -35,9 +39,9 @@ export function evaluate(t: Syn, ctx: Ctx = nil()): Sem {
         case: "pie",
         id: t.id,
         dom: evaluate(t.dom, ctx) as SemTyp,
-        cod: (a: Sem) => evaluate(t.cod, cons(a, ctx as Ctx))
+        cod: (a: Sem) => evaluateTyp(t.cod, cons(a, ctx as SemCtx))
       };
-    case "lam": return (a: Sem) => evaluate(t.bod, cons(a, ctx as Ctx));
+    case "lam": return (a: Sem) => evaluate(t.bod, cons(a, ctx as SemCtx));
     case "let": return evaluate(t.bod, cons(evaluate(t.arg, ctx), ctx));
     case "hol": return t;
     case "app": return (evaluate(t.app, ctx) as (s: Sem) => Sem)(evaluate(t.arg, ctx));
@@ -45,7 +49,7 @@ export function evaluate(t: Syn, ctx: Ctx = nil()): Sem {
   }
 }
 
-export function evaluateTyp(T: Syn, ctx: Ctx = nil()): SemTyp
+export function evaluateTyp(T: Syn, ctx: SemCtx = nil()): SemTyp
   {return evaluate(T, ctx) as SemTyp}
 
 /*
@@ -109,7 +113,7 @@ export function reify(T: SemTyp, t: Sem, dbl: Dbl = 0): SynNrm {
 }
 
 export function reifyTyp(T: SemTyp, dbl: Dbl = 0): SynTypNrm
-  {return reify({case: "uni", lvl: "omega"}, T, dbl) as SynTypNrm}
+  {return reify(U_omega, T, dbl) as SynTypNrm}
 
 // /*
 // # Examples

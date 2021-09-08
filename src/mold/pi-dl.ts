@@ -127,7 +127,7 @@ function normalize(T: Syn, t: Syn): Syn
   {return reify(evaluate(T) as SemTyp, evaluate(t))}
 
 // T: syntactic type
-function normalizeType(T: Syn): Syn
+function normalizeTyp(T: Syn): Syn
   {return normalize({case: "uni", lvl: -1}, T)}
 
 /*
@@ -139,13 +139,13 @@ seeps into the "shapes" (i.e. type & context) of the holes.
 TODO: should the HoleShape store the type as a SemTyp or a Syn??
 */
 
-type HoleCtx = PList.PList<SemTyp>;
-type HoleShape = [SemTyp, HoleCtx];
+type Ctx = PList.PList<SemTyp>;
+type HoleShape = [SemTyp, Ctx];
 
 function mold(T: Syn, t: Syn): Map<HoleId, HoleShape> {
   let shapes: Map<HoleId, HoleShape> = new Map();
 
-  function goSem(T: SemTyp, t: Sem, ctx: HoleCtx = PList.nil()): void {
+  function goSem(T: SemTyp, t: Sem, ctx: Ctx = PList.nil()): void {
     switch (T.case) {
       case "uni": {
         let tTyp: SemTyp = t as SemTyp;
@@ -182,8 +182,8 @@ function mold(T: Syn, t: Syn): Map<HoleId, HoleShape> {
     }
   }
 
-  function goApp(t: SynNe, ctx: HoleCtx): SemTyp {
-    function go(t: SynNe, ctx: HoleCtx): SemPi {
+  function goApp(t: SynNe, ctx: Ctx): SemTyp {
+    function go(t: SynNe, ctx: Ctx): SemPi {
       switch (t.case) {
         case "app": {
           let F: SemPi = go(t.app, ctx);

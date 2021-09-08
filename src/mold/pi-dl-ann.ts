@@ -173,21 +173,21 @@ export const _ = {};
 // TODO: should the HoleShape store the type as a SemTyp or a Syn??
 // */
 
-// type HoleCtx = PList.PList<SemTyp>;
-// type HoleShape = [SemTyp, HoleCtx];
+// type Ctx = PList.PList<SemTyp>;
+// type HoleShape = [SemTyp, Ctx];
 
 // // t: normalized
 // // TODO: Use t or evaluate(t)? I think t is better since they I get typeOf(t).
 // function mold(t: Syn): Map<HoleId, HoleShape> {
 //   let shapes: Map<HoleId, HoleShape> = new Map();
 
-//   function go(t: Syn, ctx: HoleCtx | undefined = undefined): void {
+//   function go(t: Syn, ctx: Ctx | undefined = undefined): void {
 //     if (ctx === undefined) ctx = undefined;
 //     switch (t.case) {
 //       case "uni": return;
 //       case "pie": go(t.dom, ctx); go(t.bod); return;
-//       case "lam": go(t.bod, PList.cons(t.type.dom, ctx as HoleCtx)); return;
-//       case "hol": shapes.set(t.id, [typeOf(t), ctx as HoleCtx]); return;
+//       case "lam": go(t.bod, PList.cons(t.type.dom, ctx as Ctx)); return;
+//       case "hol": shapes.set(t.id, [typeOf(t), ctx as Ctx]); return;
 //       case "app": go(t.arg, ctx); go(t.app, ctx); return;
 //       case "var": return;
 //       case "let": throw new Error("impossible after correct normalization");

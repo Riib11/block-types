@@ -1,8 +1,8 @@
 import { app, atRev, cons, len, map, nil, PList, single, toArray } from "../data/PList";
-import { HoleCtx, HoleShape } from "./Molding";
-import { reify, reifyTyp } from "./Normalization";
+import { HoleShape } from "./Molding";
+import { evaluateTyp, reify, reifyTyp } from "./Normalization";
 import { SemTyp } from "./Semantics";
-import { Dbl, freshHole, freshId, predLevel, showSyn, Syn, SynNeu, SynVar } from "./Syntax";
+import { Dbl, freshId, hole, predLevel, showSyn, Syn, SynNeu, SynVar } from "./Syntax";
 
 export function genPalette(shape: HoleShape): Syn[] {
   let T = shape.T;
@@ -15,7 +15,7 @@ export function genPalette(shape: HoleShape): Syn[] {
           return {
             case: "app",
             app: genArgHoles(x, T.cod({case: "var", id: T.id, dbl: x.dbl}) as SemTyp),
-            arg: freshHole()
+            arg: hole
           };
       default: return x;
     }
@@ -24,7 +24,7 @@ export function genPalette(shape: HoleShape): Syn[] {
   function paletteFromCtx(): void {
     let dbl: Dbl = 0;
     map(
-      item => plt.push(genArgHoles({case: "var", id: item.id, dbl}, item.T)),
+      item => plt.push(genArgHoles({case: "var", id: item.id, dbl}, evaluateTyp(item.T))),
       shape.ctx
     );
     dbl++;
@@ -34,13 +34,13 @@ export function genPalette(shape: HoleShape): Syn[] {
     case "uni": {
       // TODO: interface for picking level
       plt.push({case: "uni", lvl: predLevel(T.lvl)});
-      plt.push({case: "pie", id: freshId(), dom: freshHole(), cod: freshHole()});
-      plt.push({case: "let", id: freshId(), dom: freshHole(), arg: freshHole(), bod: freshHole()});
+      plt.push({case: "pie", id: freshId(), dom: hole, cod: hole});
+      plt.push({case: "let", id: freshId(), dom: hole, arg: hole, bod: hole});
       paletteFromCtx()
       break;
     }
     case "pie": {
-      plt.push({case: "lam", id: freshId(), bod: freshHole()});
+      plt.push({case: "lam", id: freshId(), bod: hole});
       break;
     }
     case "hol": break; // a term hole's surface type hole must be filled first
