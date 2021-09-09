@@ -32,6 +32,9 @@ export function normalizeTyp(T: Syn): SynTypNrm
 */
 
 export function evaluate(t: Syn, ctx: SemCtx = nil()): Sem {
+  console.log("evaluate");
+  console.log("t"); console.log(t);
+  console.log("ctx"); console.log(ctx);
   switch (t.case) {
     case "uni": return t;
     case "pie":
@@ -45,7 +48,7 @@ export function evaluate(t: Syn, ctx: SemCtx = nil()): Sem {
     case "let": return evaluate(t.bod, cons(evaluate(t.arg, ctx), ctx));
     case "hol": return t;
     case "app": return (evaluate(t.app, ctx) as (s: Sem) => Sem)(evaluate(t.arg, ctx));
-    case "var": return t;
+    case "var": return atRev(t.dbl, ctx) as Sem;
   }
 }
 
@@ -114,6 +117,19 @@ export function reify(T: SemTyp, t: Sem, dbl: Dbl = 0): SynNrm {
 
 export function reifyTyp(T: SemTyp, dbl: Dbl = 0): SynTypNrm
   {return reify(U_omega, T, dbl) as SynTypNrm}
+
+{
+  let id: Id = {lbl: "x"};
+  let T: Syn = {
+    case: "let",
+    id,
+    dom: U_omega,
+    arg: U_omega,
+    bod: {case: "var", dbl: 0, id}
+  };
+  console.log("evaluateTyp(T)"); console.log(evaluateTyp(T));
+  console.log("normalizeTyp(T)"); console.log(normalizeTyp(T));
+}
 
 // /*
 // # Examples

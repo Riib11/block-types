@@ -39,14 +39,14 @@ export function mold(state: State, ix: HoleIx): HoleShape {
 // T: normalized type
 // t: normalized term with type T 
 export function moldSyn(T: SynTypNrm, t: Syn, steps: HoleIxSteps, ctx: Ctx = nil()): HoleShape {
-  function go(T: SynTypNrm, t: Syn, steps: HoleIxSteps, ctx: Ctx): HoleShape {
-    console.log("================================")
-    console.log("moldSyn.go");
-    console.log("T"); console.log(T);
-    console.log("t"); console.log(t);
-    console.log("steps"); console.log(steps);
-    console.log("ctx"); console.log(ctx);
+  console.log("================================")
+  console.log("moldSyn");
+  console.log("T:"); console.log(T)
+  console.log("t:"); console.log(t);
+  console.log("steps:"); console.log(steps);
+  console.log("ctx:"); console.log(ctx);
 
+  function go(T: SynTypNrm, t: Syn, steps: HoleIxSteps, ctx: Ctx): HoleShape {
     let sft = shift(steps);
     if (sft !== undefined) {
       let [step, stepsNew] = sft;
