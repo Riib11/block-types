@@ -9,9 +9,9 @@ TODO: decide on name
       syntactically without normalizing)
 - [x] buffers' types are _just_ displayed, are not new syntactical objects
 - [x] buffers have a parent hole index _or_ their own context
+- [x] navigate the ast, holes, and suggested transitions
 - [ ] combine terms and their types in view i.e.
       `(λ x . b(x)) : (Π x : A . B(x))` ~~> `λ (x : A) . (b(x) : B(x))`.
-- navigate the ast, holes, and suggested transitions
 
 ## Controls
 
