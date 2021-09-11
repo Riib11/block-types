@@ -31,27 +31,20 @@ export function normalizeTyp(T: Syn): SynTypNrm
 */
 
 export function evaluate(t: Syn, sub: Sub = nil()): Sem {
-  console.log("evaluate");
-  console.log("t"); console.log(t);
-  console.log("sub"); console.log(sub);
-
   switch (t.case) {
     case "uni": return t;
     case "pie":
       return {
-        case: "pie",
+        case: "sem pie",
         id: t.id,
         dom: evaluate(t.dom, sub) as SemTyp,
-        cod: (a: Sem) => evaluateTyp(t.cod, cons(a, sub))
+        cod: {case: "sem arr", arr: (a: Sem) => evaluateTyp(t.cod, cons(a, sub))}
       };
-    case "lam": return {case: "arr", arr: (a: Sem) => evaluate(t.bod, cons(a, sub))};
+    case "lam": return {case: "sem arr", arr: (a: Sem) => evaluate(t.bod, cons(a, sub))};
     case "let": return evaluate(t.bod, cons(evaluate(t.arg, sub), sub));
     case "app": {
       let app = evaluate(t.app, sub);
       let arg = evaluate(t.arg, sub);
-      console.log("evaluate.app");
-      console.log("app"); console.log(app);
-      console.log("arg"); console.log(arg);
       switch (app.case) {
         case "sem arr": return app.arr(arg);
         case "sem pie": return app.cod.arr(arg);
@@ -105,27 +98,27 @@ export function reify(T: SemTyp, t: Sem, ix: Ix = 0): SynNrm {
       let tSemTyp: SemTyp = t as SemTyp;
       switch (tSemTyp.case) {
         case "uni": return tSemTyp;
-        case "pie":
+        case "sem pie":
           return {
             case: "pie",
             id: tSemTyp.id,
             dom: reify({case: "uni", lvl: predLevel(T.lvl)}, tSemTyp.dom, ix) as SynTypNrm,
-            cod: reify({case: "uni", lvl: predLevel(T.lvl)}, tSemTyp.cod(reflect(tSemTyp.dom, {case: "var", id: tSemTyp.id, ix}, ix + 1)), ix + 1) as SynTypNrm
+            cod: reify({case: "uni", lvl: predLevel(T.lvl)}, tSemTyp.cod.arr(reflect(tSemTyp.dom, {case: "var", id: tSemTyp.id, ix}, ix + 1)), ix + 1) as SynTypNrm
           }
         case "app":
         case "var": return tSemTyp as SynTypNrm;
       }
       break;
     }
-    case "pie": {
+    case "sem pie": {
       let tSemArr: SemArr = t as SemArr;
       return {
         case: "lam",
         id: T.id,
         bod:
           reify(
-            T.cod(reflect(T.dom, {case: "var", id: T.id, ix}, ix + 1)) as SemTyp,
-            tSemArr(reflect(T.dom, {case: "var", id: T.id, ix}, ix + 1))
+            T.cod.arr(reflect(T.dom, {case: "var", id: T.id, ix}, ix + 1)) as SemTyp,
+            tSemArr.arr(reflect(T.dom, {case: "var", id: T.id, ix}, ix + 1))
           )
       }
     }

@@ -9,7 +9,7 @@ export function infer(t: SynNeu, ctx: Ctx): SynTypNrm {
   switch (t.case) {
     case "app": {
       let F = evaluate(infer(t.app, ctx), ctxToSub(ctx)) as SemPie;
-      return reifyTyp(F.cod(t.arg), len(ctx));
+      return reifyTyp(F.cod.arr(t.arg), len(ctx));
     }
     case "var": return (atRev(t.ix, ctx) as {id: Id, T: SynTypNrm}).T;
   }

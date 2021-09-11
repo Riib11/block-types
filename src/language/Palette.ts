@@ -19,10 +19,10 @@ export function genPalette(shape: HoleShape): PaletteItem[] {
   // => f ? ... ?
   function genArgHoles(x: SynVar, T: SemTyp): SynNeu {
     switch (T.case) {
-      case "pie":
+      case "sem pie":
           return {
             case: "app",
-            app: genArgHoles(x, T.cod({case: "var", id: T.id, ix: x.ix}) as SemTyp),
+            app: genArgHoles(x, T.cod.arr({case: "var", id: T.id, ix: x.ix}) as SemTyp),
             arg: hole()
           };
       default: return x;
