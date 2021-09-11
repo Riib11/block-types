@@ -3,6 +3,7 @@
 */
 
 import { atRev, PList } from "../data/PList";
+import { HoleId } from "./HoleId";
 
 /*
 ## Syntactic domain
@@ -22,17 +23,21 @@ export type SynLam       = {case: "lam", id: Id, bod: Syn}; // λ
 export type SynLamNrm    = {case: "lam", id: Id, bod: SynNrm}; // λ
 export type SynApp       = {case: "app", app: SynNeu, arg: Syn}; // application
 export type SynAppNrm    = {case: "app", app: SynNeuNrm, arg: SynNrm}; // application
-export type SynVar       = {case: "var", id: Id, dbl: Dbl}; // variable
 export type SynLet       = {case: "let", id: Id, dom: Syn, arg: Syn, bod: Syn}; // let
-export type SynHol       = {case: "hol"}; // ?
+export type SynVar       = {case: "var", id: Id, ix: Ix}; // variable
+export type SynHol       = {case: "hol", ix: Ix} // hole
 
 export type Level = number | "omega"; // level
 export type Id = {lbl: string}; // identifier
-export type Dbl = number; // DeBruijn level
+export type Ix = number; // DeBruijn level or hole index
 
 export const U_omega: SynUni = {case: "uni", lvl: "omega"};
 
-export const hole: SynHol = {case: "hol"};
+var holeCounter = -1;
+export function hole(): SynHol {
+  holeCounter++;
+  return {case: "hol", ix: holeCounter};
+}
 
 export function showSyn(t: Syn): string {
   switch (t.case) {
@@ -40,9 +45,9 @@ export function showSyn(t: Syn): string {
     case "pie": return `Π ${t.id} : ${showSyn(t.dom)} . ${showSyn(t.cod)}`;
     case "lam": return `λ ${t.id} . ${showSyn(t.bod)}`;
     case "let": return `let ${t.id} : ${showSyn(t.dom)} = ${showSyn(t.arg)} in ${showSyn(t.bod)}`;
-    case "hol": return `?`;
     case "app": return `(${showSynNeu(t)})`;
     case "var": return showSynNeu(t);
+    case "hol": return "?";
   }
 }
 
@@ -127,9 +132,9 @@ export function eqSyn(t1: Syn, t2: Syn): boolean {
     case "pie": return t1.case === t2.case && eqSyn(t1.dom, t2.dom) && eqSyn(t1.cod, t2.cod);
     case "lam": return t1.case === t2.case && eqSyn(t1.bod, t2.bod);
     case "let": return t1.case === t2.case && eqSyn(t1.dom, t2.dom) && eqSyn(t1.arg, t2.arg) && eqSyn(t1.bod, t2.bod);
-    case "hol": return t1.case === t2.case;
     case "app": return t1.case === t2.case && eqSyn(t1.app, t2.app) && eqSyn(t1.arg, t2.arg);
-    case "var": return t1.case === t2.case && t1.dbl === t2.dbl;
+    case "var": return t1.case === t2.case && t1.ix === t2.ix
+    case "hol": return t1.case === t2.case && t1.ix === t2.ix;
   }
 }
 

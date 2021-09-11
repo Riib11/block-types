@@ -33,7 +33,7 @@
   white-space: nowrap;
 }
 
-.display > .prefabs {
+.display > .Buffers {
   padding: 10px;
   padding-bottom: 0;
   overflow: scroll;
@@ -42,22 +42,22 @@
   box-shadow: 0 0 0 1px black;
 }
 
-.prefab {
+.Buffer {
   margin-bottom: 10px;
   padding: 10px;
 }
 
-.prefab > .submit {
+.Buffer > .submit {
   width: 20px;
   height: 20px;
   background-color: rgb(141, 141, 255);
 }
-.prefab > .submit:hover {
+.Buffer > .submit:hover {
   cursor: pointer;
   background-color: rgb(0, 0, 255);
 }
 
-.prefab > .box {
+.Buffer > .box {
   box-shadow: 0 0 0 1px black;
 }
 
@@ -172,6 +172,9 @@
   margin: 0;
   font-size: inherit;
   font-family: inherit;
+}
+.palette-item:hover .term.id {
+  color: white;
 }
 
 /* HoleId */

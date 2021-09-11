@@ -2,10 +2,12 @@ import { ChangeEventHandler } from "react";
 import { MouseEventHandler } from "react";
 import App from "../App";
 import { at, atRev, cons, nil, PList } from "../data/PList";
-import { Prefab, update } from "../State";
+import { Buffer, update } from "../State";
 import { Ids } from "./Ctx";
-import { eqHoleIx, HoleIx, HoleIxSteps, stepHoleIx, topHoleIx } from "./HoleIx";
-import { Dbl, Id, Level, Syn, SynNeu } from "./Syntax";
+import { eqHolePath, HolePath, HolePathSteps, stepHolePath, topHolePath } from "./HolePath";
+import { infer } from "./Inference";
+import { mold } from "./Molding";
+import { Id, Level, Syn, SynNeu } from "./Syntax";
 
 export type Mode = "display" | "panel";
 
@@ -40,24 +42,35 @@ export class Renderer {
   }
 
   renderSig(t: Syn): JSX.Element
-    {return this.renderSyn(t, topHoleIx({case: "sig"}))}
+    {return this.renderSyn(t, topHolePath({case: "sig"}))}
 
   renderImp(t: Syn): JSX.Element
-    {return this.renderSyn(t, topHoleIx({case: "imp"}))}
+    {return this.renderSyn(t, topHolePath({case: "imp"}))}
 
-  // i: index of prefab
-  renderPfb(pfb: Prefab, i: number): JSX.Element {
+  // i: index of Buffer
+  renderBuf(buf: Buffer, i: number): JSX.Element {
     let ren = this;
-    let onClick: MouseEventHandler = event => {
-      update(ren.app.state, {case: "fill prefab", i});
+    let onClickSubmit: MouseEventHandler = event => {
+      update(ren.app.state, {case: "submit buffer", i});
       ren.app.update();
     }
+    let onClickDelete: MouseEventHandler = event => {
+      update(ren.app.state, {case: "delete buffer", i});
+      ren.app.update();
+    }
+    let shape = mold(this.app.state, buf.path);
+    // goal type
+    let Tgoal = shape.T;
+    // current type
+    let Tcurr = infer(buf.t, shape.ctx);
     return (
-      <div className="prefab">
-        <div className="submit" onClick={onClick}></div>
+      <div className="Buffer">
+        <div className="submit" onClick={onClickSubmit}></div>
+        <div className="delete" onClick={onClickDelete}></div>
         <div className="box">
-          <div className="sig">{this.renderSyn(pfb.T, topHoleIx({case: "pfb", i, subcase: "sig"}))}</div>
-          <div className="imp">{this.renderSyn(pfb.t, topHoleIx({case: "pfb", i, subcase: "imp"}))}</div>
+          <div className="sig">{this.renderSyn(Tgoal, buf.path)}</div>
+          <div className="typ">{this.renderSyn(Tcurr, buf.path)}</div>
+          <div className="imp">{this.renderSyn(buf.t, topHolePath({case: "buf", i}))}</div>
         </div>
      </div>
     );
@@ -65,27 +78,27 @@ export class Renderer {
 
   // TODO: use an immutable queue for ix.steps rather than this messy mutable stuff. I seems that its getting mixed up somewhere, and doesn't update the state's ix properly...
 
-  renderSyn(t: Syn, ix: HoleIx): JSX.Element {
+  renderSyn(t: Syn, ix: HolePath): JSX.Element {
     let ren = this;
-    function go(t: Syn, ix: HoleIx): JSX.Element {
+    function go(t: Syn, ix: HolePath, top: boolean = false): JSX.Element {
       switch (t.case) {
         case "uni": return (<span className="term uni">{ren.pncUni}<sub>{ren.renderLevel(t.lvl)}</sub></span>);
         case "pie": {
-          let dom = go(t.dom, stepHoleIx(ix, {case: "pie", subcase: "dom"}));
-          let cod = go(t.cod, stepHoleIx(ix, {case: "pie", subcase: "cod"}));
-          return (<span className="term pi">{ren.pncParL}{ren.pncPie} {ren.renderId(t.id, true)} {ren.pncCol} {dom} {ren.pncDot} {cod}{ren.pncParR}</span>);
+          let dom = go(t.dom, stepHolePath(ix, {case: "pie", subcase: "dom"}));
+          let cod = go(t.cod, stepHolePath(ix, {case: "pie", subcase: "cod"}));
+          return (<span className="term pi">{top ? "" : ren.pncParL}{ren.pncPie} {ren.renderId(t.id, true)} {ren.pncCol} {dom} {ren.pncDot} {cod}{top ? "" : ren.pncParR}</span>);
         }
         case "lam": {
-          let bod = go(t.bod, stepHoleIx(ix, {case: "lam"}));
-          return (<span className="term lam">{ren.pncParL}{ren.pncLam} {ren.renderId(t.id, true)} {ren.pncDot} {bod}{ren.pncParR}</span>);
+          let bod = go(t.bod, stepHolePath(ix, {case: "lam"}));
+          return (<span className="term lam">{top ? "" : ren.pncParL}{ren.pncLam} {ren.renderId(t.id, true)} {ren.pncDot} {bod}{top ? "" : ren.pncParR}</span>);
         }
         case "let": {
-          let dom = go(t.dom, stepHoleIx(ix, {case: "let", subcase: "dom"}));
-          let arg = go(t.arg, stepHoleIx(ix, {case: "let", subcase: "arg"}));
-          let bod = go(t.bod, stepHoleIx(ix, {case: "let", subcase: "bod"}));
-          return (<span className="term let">{ren.pncParL}{ren.pncLet} {ren.renderId(t.id, true)} {ren.pncCol} {dom} {ren.pncEq} {arg} {ren.pncIn} {bod}{ren.pncParR}</span>);
+          let dom = go(t.dom, stepHolePath(ix, {case: "let", subcase: "dom"}));
+          let arg = go(t.arg, stepHolePath(ix, {case: "let", subcase: "arg"}));
+          let bod = go(t.bod, stepHolePath(ix, {case: "let", subcase: "bod"}));
+          return (<span className="term let">{top ? "" : ren.pncParL}{ren.pncLet} {ren.renderId(t.id, true)} {ren.pncCol} {dom} {ren.pncEq} {arg} {ren.pncIn} {bod}{top ? "" : ren.pncParR}</span>);
         }
-        case "app": return (<span className="term neu">{ren.pncParL}{goNeu(t)}{ren.pncParR}</span>);
+        case "app": return (<span className="term neu">{top ? "" : ren.pncParL}{goNeu(t)}{top ? "" : ren.pncParR}</span>);
         case "var": return (<span className="term neu">{goNeu(t)}</span>);
         case "hol": return (<span className="term hol">{ren.renderHole(ix)}</span>);
       }
@@ -93,14 +106,14 @@ export class Renderer {
     function goNeu(t: SynNeu): JSX.Element {
       switch (t.case) {
         case "app": {
-          let app = go(t.app, stepHoleIx(ix, {case: "app", subcase: "app"}));
-          let arg = go(t.arg, stepHoleIx(ix, {case: "app", subcase: "arg"}));
+          let app = go(t.app, stepHolePath(ix, {case: "app", subcase: "app"}));
+          let arg = go(t.arg, stepHolePath(ix, {case: "app", subcase: "arg"}));
           return (<span className="term app">{app} {arg}</span>);
         }
         case "var": return (<span className="term var">{ren.renderId(t.id)}</span>);
       }
     }
-    return go(t, ix);
+    return go(t, ix, true);
   }
 
   renderLevel(lvl: Level): JSX.Element
@@ -132,16 +145,16 @@ export class Renderer {
   //   return (<span className="var">{(atRev(dbl, ctx) as Id).lbl}</span>)
   // }
 
-  renderHole(ix: HoleIx): JSX.Element {
+  renderHole(path: HolePath): JSX.Element {
     let s = `?`;
     switch (this.mode) {
       case "display": {
-        if (this.app.state.ix !== undefined && eqHoleIx(ix, this.app.state.ix)) {
+        if (this.app.state.path !== undefined && eqHolePath(path, this.app.state.path)) {
           return (<span className="holeId focussed">{s}</span>)
         } else {
           // transition: select this hole
           let onClick: MouseEventHandler = event => {
-            update(this.app.state, {case: "select", ix});
+            update(this.app.state, {case: "select", path});
             this.app.update();
           }
           return (<span className="holeId unfocussed" onClick={onClick}>{s}</span>)

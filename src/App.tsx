@@ -2,7 +2,7 @@ import React, { MouseEventHandler } from 'react';
 import { KeyboardEventHandler } from 'react';
 import './App.css';
 import { len, map, rev } from './data/PList';
-import { HoleIx } from './language/HoleIx';
+import { HolePath } from './language/HolePath';
 import { HoleShape, mold } from './language/Molding';
 import { evaluate, reifyTyp } from './language/Normalization';
 import { genPalette } from './language/Palette';
@@ -14,23 +14,30 @@ import { State, update } from './State';
 
 export default class App extends React.Component<Props, State> {
   state: State = {
-    sig: hole,
-    imp: hole,
-    pfbs: [],
-    ix: undefined,
+    sig: hole(),
+    imp: hole(),
+    bufs: [],
+    path: undefined,
+    trans: undefined
   };
 
-  // constructor(props: Props) {
-  //   super(props);
-  //   let app = this;
-  //   document.addEventListener("keydown", (evt: KeyboardEvent) => {
-  //     // TODO: other useful keybindings e.g.
-  //     // - selecting fill
-  //     // - filtering fills (esp. variable names for neutral forms)
-  //     // - digging
-  //     // - TODO: other kinds of transitions
-  //   }, true);
-  // }
+  constructor(props: Props) {
+    super(props);
+    let app = this;
+    document.addEventListener("keydown", (evt: KeyboardEvent) => {
+      // TODO: other useful keybindings e.g.
+      // - selecting fill
+      // - filtering fills (esp. variable names for neutral forms)
+      // - digging
+      // - TODO: other kinds of transitions
+
+      if (evt.key === "Enter" && app.state.trans !== undefined) {
+        update(app.state, app.state.trans);
+        app.update();
+      }
+
+    }, true);
+  }
 
   update(): void {this.setState(this.state)}
 
@@ -65,20 +72,20 @@ export default class App extends React.Component<Props, State> {
     let ren = new Renderer(this, "display");
     let sig = ren.renderSig(this.state.sig);
     let imp = ren.renderImp(this.state.imp);
-    let pfbs = this.state.pfbs.map((pfb, i) => ren.renderPfb(pfb, i));
+    let bufs = this.state.bufs.map((buf, i) => ren.renderBuf(buf, i));
     return (
       <div className="display">
         <div className="main">
           <div className="sig">{sig}</div>
           <div className="imp">{imp}</div>
         </div>
-        <div className="prefabs">{pfbs}</div>
+        <div className="Buffers">{bufs}</div>
       </div>
     );
   }
 
   renderPanel(): JSX.Element {
-    if (this.state.ix !== undefined) {
+    if (this.state.path !== undefined) {
       return (
         <div className="panel">
           {this.renderEnvironment()}
@@ -106,16 +113,16 @@ export default class App extends React.Component<Props, State> {
   }
 
   renderContext(): JSX.Element {
-    if (this.state.ix !== undefined) {
+    if (this.state.path !== undefined) {
       let ren = new Renderer(this, "panel");
-      let ix: HoleIx = this.state.ix;
-      let shape: HoleShape = mold(this.state, ix);
+      let path: HolePath = this.state.path;
+      let shape: HoleShape = mold(this.state, path);
       let items: JSX.Element[] = [];
       map(
         item => {
           items.push(
             <div className="context-item">
-              {item.id.lbl} : {ren.renderSyn(item.T, ix)}
+              {item.id.lbl} : {ren.renderSyn(item.T, path)}
             </div>
           )
         },
@@ -139,23 +146,23 @@ export default class App extends React.Component<Props, State> {
   }
 
   renderGoal(): JSX.Element {
-    if (this.state.ix !== undefined) {
+    if (this.state.path !== undefined) {
       let ren = new Renderer(this, "panel");
-      let shape: HoleShape = mold(this.state, this.state.ix);
+      let shape: HoleShape = mold(this.state, this.state.path);
       return (
         <div className="goal">
-          {ren.renderSyn(shape.T, this.state.ix)}
+          {ren.renderSyn(shape.T, this.state.path)}
         </div>
       )
     } else return (<div></div>)
   }
 
   renderPalette(): JSX.Element {
-    if (this.state.ix !== undefined) {
-      let ix: HoleIx = this.state.ix;
+    if (this.state.path !== undefined) {
+      let ix: HolePath = this.state.path;
       let app = this;
       let ren = new Renderer(this, "panel");
-      let shape: HoleShape = mold(this.state, this.state.ix);
+      let shape: HoleShape = mold(this.state, this.state.path);
       let plt = genPalette(shape);
       let pltElems: JSX.Element[] = [];
       plt.forEach(item => {
@@ -172,17 +179,17 @@ export default class App extends React.Component<Props, State> {
             );
             break;
           }
-          case "pfb": {
+          case "buf": {
             let onClick: MouseEventHandler = event => {
               update(this.state, {
-                case: "new prefab",
-                pfb: item.pfb
+                case: "new Buffer",
+                buf: item.buf
               });
               app.update()
             }
             pltElems.push(
               <div className="palette-item" onClick={onClick}>
-                {ren.renderSyn(item.pfb.t, ix)}
+                {ren.renderSyn(item.buf.t, ix)}
               </div>
             );
             break;

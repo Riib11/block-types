@@ -19,6 +19,13 @@ export function at<A>(i: number, l: PList<A>): A | undefined {
 export function atRev<A>(i: number, l: PList<A>): A | undefined
   {return at(len(l) - i - 1, l)}
 
+export function lookup<K, V>(k: K, m: PList<[K, V]>): V | undefined {
+  switch (m.case) {
+    case "nil": return undefined;
+    case "cons": return m.h[0] === k ? m.h[1] : lookup(k, m.t);
+  }
+}
+
 export function rev<A>(l: PList<A>): PList<A> {
   switch (l.case) {
     case "cons": return app(rev(l.t), single(l.h));

@@ -1,6 +1,6 @@
 import { len, nil, shift } from "./data/PList";
 import { Ctx, eqCtx } from "./language/Ctx";
-import { HoleIx, HoleIxSteps } from "./language/HoleIx";
+import { HolePath, HolePathSteps } from "./language/HolePath";
 import { infer } from "./language/Inference";
 import { HoleShape, mold } from "./language/Molding";
 import { evaluate, evaluateTyp, normalize, normalizeTyp, reifyTyp } from "./language/Normalization";
@@ -10,21 +10,24 @@ import { eqSyn, Id, isConcrete, showSyn, Syn, SynApp, SynLam, SynLamNrm, SynLet,
 export type State = {
   sig: Syn; // top-level type
   imp: Syn; // top-level term
-  pfbs: Prefab[]; // prefabs
-  ix: HoleIx | undefined, // focussed hole id
+  bufs: Buffer[]; // Buffers
+  path: HolePath | undefined, // focussed hole path
+  trans: Trans | undefined, // selected transition
 }
 
-export type Prefab = {
-  ctx: Ctx,
-  T: Syn,
-  t: Syn,
+export type Buffer = {
+  path: HolePath, // parent hole's path
+  t: SynNeu,
 }
 
 export type Trans
-  = {case: "select", ix: HoleIx} // select a hole as the new focussed hole
+  = {case: "select", path: HolePath} // select a hole as the new focussed hole
+  | {case: "move selection", dir: "left" | "right" | "up" | "down"} // move selection to an adjacent hole
+  | {case: "move suggestion", dir: "left" | "right"} // move suggested palette option to adjacent palette option
   | {case: "fill", t: Syn} // fill the focussed hole with a term
-  | {case: "fill prefab", i: number} // attempt to fill the focussed hole with the prefab at index i
-  | {case: "new prefab", pfb: Prefab} // create a new prefab
+  | {case: "submit buffer", i: number} // attempt to fill the focussed hole with the Buffer at index i
+  | {case: "delete buffer", i: number} // attempt to fill the focussed hole with the Buffer at index i
+  | {case: "new Buffer", buf: Buffer} // create a new Buffer
   | {case: "rename", id: Id, lbl: string} // rename an Id
 
 export function update(state: State, trans: Trans): void {
@@ -35,67 +38,97 @@ export function update(state: State, trans: Trans): void {
 
   switch (trans.case) {
     case "select": {
-      state.ix = trans.ix;
+      state.path = trans.path;
+      break;
+    }
+    case "move selection": {
+      if (state.path === undefined) {
+        console.log("You must select a hole before moving.");
+        break;
+      }
+      switch (trans.dir) {
+        case "left": {
+          break;
+        }
+        case "right": {
+          break;
+        }
+        case "up": {
+          switch (state.path.top.case) {
+            case "buf": {
+              let buf = state.bufs[state.path.top.i];
+              state.path = buf.path;
+              break;
+            }
+            default: {
+              console.log("You cannot move up if you are not currently focussed inside of a Buffer.");
+              break;
+            }
+          }
+          break;
+        }
+        case "down": {
+          // looks for a Buffer with the same type and context of the current hole
+          // TODO
+        }
+      }
+      break;
+    }
+    case "move suggestion": {
       break;
     }
     case "fill": {
-      if (state.ix === undefined) {
+      if (state.path === undefined) {
         console.log("You must select a hole before filling.");
         break;
       }
-      switch (state.ix.top.case) {
-        case "sig": state.sig = fillSyn(state.sig, trans.t, state.ix.steps); break;
-        case "imp": state.imp = fillSyn(state.imp, trans.t, state.ix.steps); break;
-        case "pfb": {
-          let pfb = state.pfbs[state.ix.top.i];
-          switch (state.ix.top.subcase) {
-            case "sig": pfb.T = fillSyn(pfb.T, trans.t, state.ix.steps); break;
-            case "imp": pfb.t = fillSyn(pfb.t, trans.t, state.ix.steps); break;
-          }
+      switch (state.path.top.case) {
+        case "sig": state.sig = fillSyn(state.sig, trans.t, state.path.steps); break;
+        case "imp": state.imp = fillSyn(state.imp, trans.t, state.path.steps); break;
+        case "buf": {
+          let buf = state.bufs[state.path.top.i];
+          buf.t = fillSyn(buf.t, trans.t, state.path.steps) as SynNeu;
         }
       }
       // unfocus
-      state.ix = undefined;
+      state.path = undefined;
       break;
     }
-    case "fill prefab": {
-      if (state.ix === undefined) {
-        console.log("You must select a hole before filling.");
-        break;
-      }
-      let shape = mold(state, state.ix);
-      let pfb = state.pfbs[trans.i]
+    case "submit buffer": {
+      let buf = state.bufs[trans.i]
+      let shape = mold(state, buf.path);
+      let Tbuf = infer(buf.t, shape.ctx);
       // check that types matche
-      if (!eqSyn(shape.T, pfb.T)) {
-        console.log("You cannot fill a hole with a prefab of a different type.");
+      if (!eqSyn(shape.T, Tbuf)) {
+        console.log("You cannot fill a hole with a Buffer of a different type.");
         break;
       }
       // check that contexts match
       if (!eqCtx(shape.ctx, shape.ctx)) {
-        console.log("You cannot fill a hole with a prefab from a different context.");
+        console.log("You cannot fill a hole with a Buffer from a different context.");
         break;
       }
       // fill
-      switch (state.ix.top.case) {
-        case "sig": state.sig = fillSyn(state.sig, pfb.t, state.ix.steps); break;
-        case "imp": state.imp = fillSyn(state.imp, pfb.t, state.ix.steps); break;
-        case "pfb": {
-          let pfb = state.pfbs[state.ix.top.i];
-          switch (state.ix.top.subcase) {
-            case "sig": pfb.T = fillSyn(pfb.T, pfb.t, state.ix.steps); break;
-            case "imp": pfb.t = fillSyn(pfb.t, pfb.t, state.ix.steps); break;
-          }
+      switch (buf.path.top.case) {
+        case "sig": state.sig = fillSyn(state.sig, buf.t, buf.path.steps); break;
+        case "imp": state.imp = fillSyn(state.imp, buf.t, buf.path.steps); break;
+        case "buf": {
+          buf.t = fillSyn(buf.t, buf.t, buf.path.steps) as SynNeu;
         }
       }
-      // delete used prefab
-      state.pfbs.splice(trans.i, 1);
+      // delete used Buffer
+      state.bufs.splice(trans.i, 1);
       // unfocus
-      state.ix = undefined;
+      state.path = undefined;
       break;
     }
-    case "new prefab": {
-      console.log("trans.p:"); console.log(trans.pfb);
-      state.pfbs.push(trans.pfb);
+    case "delete buffer": {
+      state.bufs.splice(trans.i, 1);
+      break;
+    }
+    case "new Buffer": {
+      console.log("trans.p:"); console.log(trans.buf);
+      state.bufs.push(trans.buf);
       break;
     }
     case "rename": {
@@ -105,8 +138,8 @@ export function update(state: State, trans: Trans): void {
   }
 }
 
-export function fillSyn(t: Syn, s: Syn, steps: HoleIxSteps): Syn {
-  function go(t: Syn, steps: HoleIxSteps): Syn {
+export function fillSyn(t: Syn, s: Syn, steps: HolePathSteps): Syn {
+  function go(t: Syn, steps: HolePathSteps): Syn {
     let sft = shift(steps);
     if (sft !== undefined) {
       let [step, stepsNew] = sft;

@@ -2,25 +2,24 @@
 # Normalization by evaluation
 */
 
-import { atRev, cons, map, nil, PList } from "../data/PList";
-import { Ctx } from "./Ctx";
+import { atRev, cons, nil, PList } from "../data/PList";
 import { Sem, SemArr, SemTyp } from "./Semantics";
-import { Dbl, Id, predLevel, Syn, SynNeu, SynNrm, SynTypNrm, U_omega } from "./Syntax";
+import { Id, Ix, predLevel, Syn, SynNeu, SynNrm, SynTypNrm, SynVar, U_omega } from "./Syntax";
 
 /*
-## Types
+## Substitution
 */
 
-export type SemCtx = PList<Sem>;
+export type Sub = PList<Sem>;
 
-export function toSemCtx(ctx: Ctx): SemCtx
-  {return map(item => item.T, ctx)}
+// export function toSemCtx(sub: Ctx): SemCtx
+//   {return map(item => item.T, sub)}
 
 /*
 ## Normalization
 */
 
-export function normalize(T: Syn, t: Syn): SynNrm
+export function normalize(T: Syn, t: Syn, sub: Sub = nil()): SynNrm
   {return reify(evaluate(T) as SemTyp, evaluate(t))}
 
 // T: syntactic type
@@ -31,44 +30,66 @@ export function normalizeTyp(T: Syn): SynTypNrm
 ## Evaluation
 */
 
-export function evaluate(t: Syn, ctx: SemCtx = nil()): Sem {
+export function evaluate(t: Syn, sub: Sub = nil()): Sem {
   console.log("evaluate");
   console.log("t"); console.log(t);
-  console.log("ctx"); console.log(ctx);
+  console.log("sub"); console.log(sub);
+
   switch (t.case) {
     case "uni": return t;
     case "pie":
       return {
         case: "pie",
         id: t.id,
-        dom: evaluate(t.dom, ctx) as SemTyp,
-        cod: (a: Sem) => evaluateTyp(t.cod, cons(a, ctx as SemCtx))
+        dom: evaluate(t.dom, sub) as SemTyp,
+        cod: (a: Sem) => evaluateTyp(t.cod, cons(a, sub))
       };
-    case "lam": return (a: Sem) => evaluate(t.bod, cons(a, ctx as SemCtx));
-    case "let": return evaluate(t.bod, cons(evaluate(t.arg, ctx), ctx));
+    case "lam": return {case: "arr", arr: (a: Sem) => evaluate(t.bod, cons(a, sub))};
+    case "let": return evaluate(t.bod, cons(evaluate(t.arg, sub), sub));
+    case "app": {
+      let app = evaluate(t.app, sub);
+      let arg = evaluate(t.arg, sub);
+      console.log("evaluate.app");
+      console.log("app"); console.log(app);
+      console.log("arg"); console.log(arg);
+      switch (app.case) {
+        case "sem arr": return app.arr(arg);
+        case "sem pie": return app.cod.arr(arg);
+        default: throw new Error("Impossible for well-typed term.");
+      }
+    }
+    case "var": {
+      let s = atRev(t.ix, sub);
+      if (s !== undefined)
+        return s;
+      else {
+        throw new Error(`The variable index ${t.id.lbl}@${t.ix} is out of bounds.`);
+      }
+    }
     case "hol": return t;
-    case "app": return (evaluate(t.app, ctx) as (s: Sem) => Sem)(evaluate(t.arg, ctx));
-    case "var": return atRev(t.dbl, ctx) as Sem;
   }
 }
 
-export function evaluateTyp(T: Syn, ctx: SemCtx = nil()): SemTyp
-  {return evaluate(T, ctx) as SemTyp}
+export function evaluateTyp(T: Syn, sub: Sub = nil()): SemTyp
+  {return evaluate(T, sub) as SemTyp}
 
 /*
 ## Reflection
 */
 
-export function reflect(T: SemTyp, t: SynNeu, dbl: Dbl = 0): Sem {
+export function reflect(T: SemTyp, t: SynNeu, ix: Ix = 0): Sem {
   switch (T.case) {
     case "uni": return t;
-    case "pie": return (a: Sem) => 
-      reflect(
-        T.cod(a) as SemTyp,
-        {case: "app", app: t, arg: reify(T.dom as SemTyp, a, dbl)},
-        dbl + 1
-      );
-    case "hol":
+    case "sem pie": 
+      return {
+        case: "sem arr",
+        arr: (a: Sem) => 
+          reflect(
+            T.cod.arr(a) as SemTyp,
+            {case: "app", app: t, arg: reify(T.dom as SemTyp, a, ix)},
+            ix + 1
+          )
+      }
     case "app":
     case "var": return t;
   }
@@ -78,7 +99,7 @@ export function reflect(T: SemTyp, t: SynNeu, dbl: Dbl = 0): Sem {
 ## Reification
 */
 
-export function reify(T: SemTyp, t: Sem, dbl: Dbl = 0): SynNrm {
+export function reify(T: SemTyp, t: Sem, ix: Ix = 0): SynNrm {
   switch (T.case) {
     case "uni": {
       let tSemTyp: SemTyp = t as SemTyp;
@@ -88,12 +109,11 @@ export function reify(T: SemTyp, t: Sem, dbl: Dbl = 0): SynNrm {
           return {
             case: "pie",
             id: tSemTyp.id,
-            dom: reify({case: "uni", lvl: predLevel(T.lvl)}, tSemTyp.dom, dbl) as SynTypNrm,
-            cod: reify({case: "uni", lvl: predLevel(T.lvl)}, tSemTyp.cod(reflect(tSemTyp.dom, {case: "var", id: tSemTyp.id, dbl}, dbl + 1)), dbl + 1)  as SynTypNrm
+            dom: reify({case: "uni", lvl: predLevel(T.lvl)}, tSemTyp.dom, ix) as SynTypNrm,
+            cod: reify({case: "uni", lvl: predLevel(T.lvl)}, tSemTyp.cod(reflect(tSemTyp.dom, {case: "var", id: tSemTyp.id, ix}, ix + 1)), ix + 1) as SynTypNrm
           }
         case "app":
-        case "var":
-        case "hol": return tSemTyp as SynTypNrm;
+        case "var": return tSemTyp as SynTypNrm;
       }
       break;
     }
@@ -104,32 +124,68 @@ export function reify(T: SemTyp, t: Sem, dbl: Dbl = 0): SynNrm {
         id: T.id,
         bod:
           reify(
-            T.cod(reflect(T.dom, {case: "var", id: T.id, dbl}, dbl + 1)) as SemTyp,
-            tSemArr(reflect(T.dom, {case: "var", id: T.id, dbl}, dbl + 1))
+            T.cod(reflect(T.dom, {case: "var", id: T.id, ix}, ix + 1)) as SemTyp,
+            tSemArr(reflect(T.dom, {case: "var", id: T.id, ix}, ix + 1))
           )
       }
     }
-    case "hol":
     case "app":
     case "var": return t as SynNrm;
   }
 }
 
-export function reifyTyp(T: SemTyp, dbl: Dbl = 0): SynTypNrm
-  {return reify(U_omega, T, dbl) as SynTypNrm}
+export function reifyTyp(T: SemTyp, ix: Ix = 0): SynTypNrm
+  {return reify(U_omega, T, ix) as SynTypNrm}
 
-{
-  let id: Id = {lbl: "x"};
-  let T: Syn = {
-    case: "let",
-    id,
-    dom: U_omega,
-    arg: U_omega,
-    bod: {case: "var", dbl: 0, id}
-  };
-  console.log("evaluateTyp(T)"); console.log(evaluateTyp(T));
-  console.log("normalizeTyp(T)"); console.log(normalizeTyp(T));
-}
+// {
+//   let A: Id = {lbl: "A"};
+//   let F: Id = {lbl: "F"};
+//   let f: Id = {lbl: "f"};
+//   let x1: Id = {lbl: "x1"};
+//   let x2: Id = {lbl: "x2"};
+//   let x3: Id = {lbl: "x3"};
+//   let T: Syn = {
+//     case: "pie",
+//     id: A, // 0
+//     dom: U_omega,
+//     cod: {
+//       case: "pie",
+//       id: F, // 1
+//       dom: {
+//         case: "pie",
+//         id: x1, // 1
+//         dom: {case: "var", ix: 0, id: A},
+//         cod: U_omega
+//       },
+//       cod: {
+//         case: "pie",
+//         id: f, // 2
+//         dom: {
+//           case: "pie",
+//           id: x2, // 2
+//           dom: {case: "var", ix: 0, id: A},
+//           cod: {
+//             case: "app",
+//             app: {case: "var", ix: 1, id: F},
+//             arg: {case: "var", ix: 2, id: x2}
+//           }
+//         },
+//         cod: {
+//           case: "pie",
+//           id: x3, // 3
+//           dom: {case: "var", ix: 0, id: A},
+//           cod: {
+//             case: "app",
+//             app: {case: "var", ix: 1, id: F},
+//             arg: {case: "var", ix: 3, id: x3}
+//           }
+//         }
+//       },
+//     }
+//   };
+//   console.log("evaluateTyp(T)"); console.log(evaluateTyp(T));
+//   console.log("normalizeTyp(T)"); console.log(normalizeTyp(T));
+// }
 
 // /*
 // # Examples

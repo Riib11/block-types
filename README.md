@@ -2,6 +2,16 @@
 
 TODO: decide on name
 
+## TODO
+
+- [ ] Holes are just (unique) free variables (but cannot be part of context for
+      `evaluate` unfortunately, because we need to be able to substitute holes
+      syntactically without normalizing)
+- [ ] buffers' types are _just_ displayed, are not new syntactical objects
+- [ ] buffers have a parent hole index _or_ their own context
+- [ ] combine terms and their types in view i.e.
+      `(λ x . b(x)) : (Π x : A . B(x))` ~~> `λ (x : A) . (b(x) : B(x))`.
+
 ## Overview
 
 This project aims to formalize and implement an interactive programming
@@ -112,7 +122,7 @@ The interaction loop with the programming environment has three components:
 TODO:
 
 - cut-copy-pasting blocks
-- manipulating contexts of prefab blocks
+- manipulating contexts of Buffer blocks
   - if a hole is filled in such a way that specifies the type of the filled
     argument, then when that argument is dug then its type will still be
     instantiated with any specifications that were achieved from the context.
