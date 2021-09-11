@@ -42,9 +42,9 @@ export function hole(): SynHol {
 export function showSyn(t: Syn): string {
   switch (t.case) {
     case "uni": return `U${t.lvl}`;
-    case "pie": return `Π ${t.id} : ${showSyn(t.dom)} . ${showSyn(t.cod)}`;
-    case "lam": return `λ ${t.id} . ${showSyn(t.bod)}`;
-    case "let": return `let ${t.id} : ${showSyn(t.dom)} = ${showSyn(t.arg)} in ${showSyn(t.bod)}`;
+    case "pie": return `Π ${t.id.lbl} : ${showSyn(t.dom)} . ${showSyn(t.cod)}`;
+    case "lam": return `λ ${t.id.lbl} . ${showSyn(t.bod)}`;
+    case "let": return `let ${t.id.lbl} : ${showSyn(t.dom)} = ${showSyn(t.arg)} in ${showSyn(t.bod)}`;
     case "app": return `(${showSynNeu(t)})`;
     case "var": return showSynNeu(t);
     case "hol": return "?";

@@ -21,14 +21,14 @@ export type Buffer
   = {case: "top", T: Syn, t: Syn, foc: Focus | undefined}
   | {case: "app", T: Syn, t: SynApp, foc: Focus | undefined}
 
-export type Trans
+export type Tran
   = {case: "fill", t: Syn} // fill the focussed hole
   | {case: "buffer create", t: SynApp} // open a buffer for the focussed hole
   | {case: "buffer submit"} // submit the buffer into the focussed hole
   | {case: "select", id: HoleId} // select a hole to focus
   | {case: "rename", id: Id, lbl: string} // rename an Id
 
-export function update(state: State, trans: Trans): void {
+export function update(state: State, trans: Tran): void {
   console.log("================================================")
   console.log("update");
   console.log("state:"); console.log(state);

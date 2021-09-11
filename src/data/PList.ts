@@ -7,6 +7,8 @@ export function nil<A>(): PList<A> {return {case: "nil"}}
 
 export function cons<A>(h: A, t: PList<A>): PList<A> {return {case: "cons", h, t}}
 
+export function isNil<A>(l: PList<A>): boolean {return l.case === "nil"};
+
 export function single<A>(h: A): PList<A> {return {case: "cons", h, t: nil()}}
 
 export function at<A>(i: number, l: PList<A>): A | undefined {
@@ -81,6 +83,24 @@ export function shift<A>(l: PList<A>): [A, PList<A>] | undefined {
   switch (l.case) {
     case "nil": return undefined;
     case "cons": return [l.h, l.t];
+  }
+}
+
+export function pop<A>(l: PList<A>): [PList<A>, A] | undefined {
+  switch (l.case) {
+    case "nil": return undefined;
+    case "cons": {
+      switch (l.t.case) {
+        case "nil": return [{case: "nil"}, l.h];
+        case "cons": {
+          let res = pop(l.t);
+          if (res !== undefined) {
+            let [lNew, a] = res;
+            return [cons(l.h, lNew), a];
+          } else return undefined;
+        }
+      }
+    }
   }
 }
 

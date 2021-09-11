@@ -4,13 +4,44 @@ TODO: decide on name
 
 ## TODO
 
-- [ ] Holes are just (unique) free variables (but cannot be part of context for
+- [x] Holes are just (unique) free variables (but cannot be part of context for
       `evaluate` unfortunately, because we need to be able to substitute holes
       syntactically without normalizing)
-- [ ] buffers' types are _just_ displayed, are not new syntactical objects
-- [ ] buffers have a parent hole index _or_ their own context
+- [x] buffers' types are _just_ displayed, are not new syntactical objects
+- [x] buffers have a parent hole index _or_ their own context
 - [ ] combine terms and their types in view i.e.
       `(λ x . b(x)) : (Π x : A . B(x))` ~~> `λ (x : A) . (b(x) : B(x))`.
+- navigate the ast, holes, and suggested transitions
+
+## Controls
+
+Keyboard:
+
+- `w`, `a`, `s`, `d`: Navigate the AST of your current top-level term (which may
+  be the top-level signature, the top-level implementation, or a buffer's
+  implementation). The selected term will be highlighted in green (and filled in
+  green if it is a hole). There are currently no controls for navigating between
+  top-level structures.
+- `↑`, `←`: Navigate the palette of transitions (in the panel to the right,
+  below the environment). The selected palette item will be highlighted in
+  green;
+- `Enter`: Submit the currently-selected palette item, which fills in the
+  currently-selected hole or creates a buffer from the currently-selected hole.
+- `Space`: Submit the currently-selected buffer into its parent hole. If the
+  buffer's type is wrong, nothing will happen.
+- `Tab`, `Shift+Tab: Focus the next/previous identifier binding (for editting).
+- `Esc`: unfocus the currently selected identifier binding (to avoid having
+  intended keyboard commands captured as text input instead).
+
+Mouse:
+
+- Click a hole: Select a hole .
+- Click an identifier binding: Focus an identifier binding (for editting).
+- Click a palette item: Submit the clicked palette item.
+- Click the green box above a buffer: Submit the buffer into its parent hole. If
+  the buffer's type is wrong, nothing will happen.
+- Click the red box above a buffer: Delete the buffer.
+- Hover over a right-parenthesis: Highlight its pair of parentheses.
 
 ## Overview
 

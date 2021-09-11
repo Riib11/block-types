@@ -2,7 +2,7 @@
 # Normalization by evaluation
 */
 
-import { atRev, cons, nil, PList } from "../data/PList";
+import { atRev, cons, len, nil, PList } from "../data/PList";
 import { Sem, SemArr, SemTyp } from "./Semantics";
 import { Id, Ix, predLevel, Syn, SynNeu, SynNrm, SynTypNrm, SynVar, U_omega } from "./Syntax";
 
@@ -19,12 +19,16 @@ export type Sub = PList<Sem>;
 ## Normalization
 */
 
+// T: syntactic type
+// t: syntactic term with type T
+// sub: substitution of variables in t
 export function normalize(T: Syn, t: Syn, sub: Sub = nil()): SynNrm
   {return reify(evaluate(T) as SemTyp, evaluate(t))}
 
 // T: syntactic type
-export function normalizeTyp(T: Syn): SynTypNrm
-  {return normalize(U_omega, T) as SynTypNrm}
+// sub: substitution of variables in T
+export function normalizeTyp(T: Syn, sub: Sub = nil()): SynTypNrm
+  {return normalize(U_omega, T, sub) as SynTypNrm}
 
 /*
 ## Evaluation
@@ -84,7 +88,8 @@ export function reflect(T: SemTyp, t: SynNeu, ix: Ix = 0): Sem {
           )
       }
     case "app":
-    case "var": return t;
+    case "var":
+    case "hol": return t;
   }
 }
 
@@ -106,7 +111,8 @@ export function reify(T: SemTyp, t: Sem, ix: Ix = 0): SynNrm {
             cod: reify({case: "uni", lvl: predLevel(T.lvl)}, tSemTyp.cod.arr(reflect(tSemTyp.dom, {case: "var", id: tSemTyp.id, ix}, ix + 1)), ix + 1) as SynTypNrm
           }
         case "app":
-        case "var": return tSemTyp as SynTypNrm;
+        case "var": 
+        case "hol": return tSemTyp as SynTypNrm;
       }
       break;
     }
@@ -123,7 +129,8 @@ export function reify(T: SemTyp, t: Sem, ix: Ix = 0): SynNrm {
       }
     }
     case "app":
-    case "var": return t as SynNrm;
+    case "var":
+    case "hol": return t as SynNrm;
   }
 }
 

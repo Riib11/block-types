@@ -1,8 +1,9 @@
 import React, { MouseEventHandler } from 'react';
 import { KeyboardEventHandler } from 'react';
 import './App.css';
-import { len, map, rev } from './data/PList';
-import { HolePath } from './language/HolePath';
+import { len, map, nil, rev } from './data/PList';
+import { pushState } from './language/History';
+import { Path } from './language/Path';
 import { HoleShape, mold } from './language/Molding';
 import { evaluate, reifyTyp } from './language/Normalization';
 import { genPalette } from './language/Palette';
@@ -10,36 +11,66 @@ import { Renderer } from './language/Renderer';
 import { SemTyp } from './language/Semantics';
 import { hole, showSyn, Syn } from './language/Syntax';
 import { Props } from './Props';
-import { State, update } from './State';
+import { regenPalette, State, update } from './State';
 
 export default class App extends React.Component<Props, State> {
   state: State = {
     sig: hole(),
     imp: hole(),
     bufs: [],
-    path: undefined,
-    trans: undefined
+    path: {top: {case: "sig"}, steps: nil()},
+    plt: {items: [], i: undefined}
   };
 
   constructor(props: Props) {
     super(props);
     let app = this;
-    document.addEventListener("keydown", (evt: KeyboardEvent) => {
+    document.addEventListener("keydown", (event: KeyboardEvent) => {
       // TODO: other useful keybindings e.g.
       // - selecting fill
       // - filtering fills (esp. variable names for neutral forms)
       // - digging
       // - TODO: other kinds of transitions
 
-      if (evt.key === "Enter" && app.state.trans !== undefined) {
-        update(app.state, app.state.trans);
-        app.update();
-      }
+      console.log(event.key);
 
+      if (event.key === "Enter" && app.state.plt.i !== undefined) {
+        app.update(update(app.state, app.state.plt.items[app.state.plt.i]));
+      } else
+      // undo
+      if (event.key === "z") {app.update(update(app.state, {case: "undo"}));} else
+      // move selection: left
+      if (event.key === "a") {app.update(update(app.state, {case: "move selection", dir: "left"}))} else
+      if (event.key === "d") {app.update(update(app.state, {case: "move selection", dir: "right"}))} else
+      if (event.key === "w") {app.update(update(app.state, {case: "move selection", dir: "up"}))} else
+      if (event.key === "s") {app.update(update(app.state, {case: "move selection", dir: "down"}))} else
+      if (event.key === " ") {
+        if (app.state.path !== undefined && app.state.path.top.case === "buf") {
+          // submit selected buffer
+          app.update(update(app.state, {case: "submit buffer", i: app.state.path.top.i}));
+        }
+      } // else
+      if (event.key === "ArrowUp") {app.update(update(app.state, {case: "move suggestion", dir: "up"}))} else
+      if (event.key === "ArrowDown") {app.update(update(app.state, {case: "move suggestion", dir: "down"}))}
+      if (event.key === "Escape") {
+        if (document.activeElement !== undefined) {
+          try { // may not be an HTMLElement
+            (document.activeElement as unknown as HTMLElement).blur();
+          } catch (error) {}
+        }
+      }
+      
     }, true);
+
+    // Some initial calculation in State
+    regenPalette(this.state);
+    if (this.state.plt.items.length > 0)
+      this.state.plt.i = 0;
+
+    // pushState(this.state); // TODO
   }
 
-  update(): void {this.setState(this.state)}
+  update(state: State): void {this.setState(state)}
 
   render(): JSX.Element {
     return (
@@ -69,7 +100,7 @@ export default class App extends React.Component<Props, State> {
   // }
 
   renderDisplay(): JSX.Element {
-    let ren = new Renderer(this, "display");
+    let ren = new Renderer(this);
     let sig = ren.renderSig(this.state.sig);
     let imp = ren.renderImp(this.state.imp);
     let bufs = this.state.bufs.map((buf, i) => ren.renderBuf(buf, i));
@@ -114,8 +145,9 @@ export default class App extends React.Component<Props, State> {
 
   renderContext(): JSX.Element {
     if (this.state.path !== undefined) {
-      let ren = new Renderer(this, "panel");
-      let path: HolePath = this.state.path;
+      let ren = new Renderer(this);
+      ren.mode = "view";
+      let path: Path = this.state.path;
       let shape: HoleShape = mold(this.state, path);
       let items: JSX.Element[] = [];
       map(
@@ -147,7 +179,8 @@ export default class App extends React.Component<Props, State> {
 
   renderGoal(): JSX.Element {
     if (this.state.path !== undefined) {
-      let ren = new Renderer(this, "panel");
+      let ren = new Renderer(this);
+      ren.mode = "view";
       let shape: HoleShape = mold(this.state, this.state.path);
       return (
         <div className="goal">
@@ -159,45 +192,10 @@ export default class App extends React.Component<Props, State> {
 
   renderPalette(): JSX.Element {
     if (this.state.path !== undefined) {
-      let ix: HolePath = this.state.path;
-      let app = this;
-      let ren = new Renderer(this, "panel");
-      let shape: HoleShape = mold(this.state, this.state.path);
-      let plt = genPalette(shape);
+      let path: Path = this.state.path;
+      let ren = new Renderer(this);
       let pltElems: JSX.Element[] = [];
-      plt.forEach(item => {
-        switch (item.case) {
-          case "fill": {
-            let onClick: MouseEventHandler = event => {
-              update(this.state, {case: "fill", t: item.t});
-              app.update()
-            }
-            pltElems.push(
-              <div className="palette-item" onClick={onClick}>
-                {ren.renderSyn(item.t, ix)}
-              </div>
-            );
-            break;
-          }
-          case "buf": {
-            let onClick: MouseEventHandler = event => {
-              update(this.state, {
-                case: "new Buffer",
-                buf: item.buf
-              });
-              app.update()
-            }
-            pltElems.push(
-              <div className="palette-item" onClick={onClick}>
-                {ren.renderSyn(item.buf.t, ix)}
-              </div>
-            );
-            break;
-          }
-        }
-
-
-      });
+      this.state.plt.items.forEach((item, i) => pltElems.push(ren.renderPaletteItem(item, path, i === this.state.plt.i)));
       return (
         <div className="palette">
           {pltElems}

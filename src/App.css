@@ -33,7 +33,7 @@
   white-space: nowrap;
 }
 
-.display > .Buffers {
+.display > .buffers {
   padding: 10px;
   padding-bottom: 0;
   overflow: scroll;
@@ -42,22 +42,34 @@
   box-shadow: 0 0 0 1px black;
 }
 
-.Buffer {
+.buffer {
   margin-bottom: 10px;
   padding: 10px;
 }
 
-.Buffer > .submit {
+.buffer > .submit {
   width: 20px;
   height: 20px;
-  background-color: rgb(141, 141, 255);
+  background-color: rgb(32, 190, 0);
+  float: left;
 }
-.Buffer > .submit:hover {
+.buffer > .submit:hover {
   cursor: pointer;
-  background-color: rgb(0, 0, 255);
+  background-color: rgb(0, 219, 37);
 }
 
-.Buffer > .box {
+.buffer > .delete {
+  width: 20px;
+  height: 20px;
+  float: left;
+  background-color: rgb(151, 0, 0);
+}
+.buffer > .delete:hover {
+  cursor: pointer;
+  background-color: rgb(255, 0, 0);
+}
+
+.buffer > .box {
   box-shadow: 0 0 0 1px black;
 }
 
@@ -119,6 +131,12 @@
   color: white;
 }
 
+.palette-item.selected {
+  /* background-color: rgb(196, 196, 196); */
+  background-color: green;
+  color: white;
+}
+
 /* Program */
 
 .prgm {
@@ -132,6 +150,9 @@
 .term {
   vertical-align: text-top;
   display: inline-block;
+}
+.term.selected {
+  box-shadow: 0 0 0 1px green;
 }
 .term.uni {
 }
@@ -173,7 +194,8 @@
   font-size: inherit;
   font-family: inherit;
 }
-.palette-item:hover .term.id {
+.palette-item:hover .term.id,
+.palette-item.selected .term.id {
   color: white;
 }
 
