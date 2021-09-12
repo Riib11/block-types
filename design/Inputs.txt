@@ -1,0 +1,98 @@
+This file describes the valid inputs. Essentially, each input is a transformation
+that can be done on the program. Currently, there are hold fills and digs.
+There should also eventually be an input for putting a "prefab" or "buffer"
+into a hole.
+
+If my representation is successful, it will make these easier to define rather
+than harder.
+
+e ::= λ x . e | u | let x = E in e | T | ?ᵉ
+E ::= λ (x : T) . E | u | let x = E in E | T | [e : T]
+u :: = x | u e
+T ::= U | Pi (x : e) e | ?ᵀ
+
+Note that there is not directly a hole in E, instead use [?ᵉ : T].
+Given [e : T], some inputs act on e, some act on whole thing.
+
+a → b   means that there is an input which transforms a to b
+a ⇒ b  means a normalizes to b
+
+HOLE FILLING RULES:
+
+───────────────────────────────────────
+[?ᵉ : Π e₁ e₂] → λ (x : e₁) . [?ᵉ : e₂]
+
+───────────────────────────────────── We don't allow this rule!
+[?ᵉ : Π e₁ e₂] → [λ x . ?ᵉ : Π e₁ e₂]
+
+Allowing that rule would be valid, but we want the term-mixed-with-type presentation
+so that computing allowable digs is easier later.
+
+On the other hand, if the type is a neutral, e.g. like GenType 3,
+which happens to compute to a Π but is not syntactically a Π, then we DO
+allow that:
+
+      u ⇒ Π e₁ e₂
+─────────────────────────
+[?ᴱ : u] → [λ x . ?ᴱ : u]
+
+
+(for these next two rules, not sure if this is the best way to write them.
+  For e rules, not sure where I should put the types.)
+
+[e₁ : T₁] → [e₂ : T₁]    u ⇒ Π T₁ T₂
+───────────────────────────────────────
+            u e₁ → u e₂
+
+            [e₁ : T₁] → [e₂ : T₁]
+────────────────────────────────────────────────   ? Is this right?
+[let x = E in e₁ : T₁] → [let x = E in e₂ : T₁]
+
+
+(lots more rules...)
+
+
+DIGGING RULES:
+
+Two judgements. e term-diggable means that e can be dug in a way that modifies
+the term but not the type. e type-diggable means that e can be dug in a way that
+modifies both term and type.
+
+(u e₁) type-diggable
+───────────────────────────────────────
+e₁ term-diggable
+
+(e₁ : T₁) term-diggable
+───────────────────────────────────────
+e₁ term-diggable
+
+(?ᵉ : T₁) type-diggable
+───────────────────────────────────────
+T₁ type-diggable
+
+λ (x : T₁) . E₁ term-diggable
+───────────────────────────────────────
+E₁ term-diggable
+
+Anyway, these are unfinished. But my hope with the representation is that ALL
+rules can be defined in a way that only needs to look at one syntax contructor
+at a time. If I can do this, then this is a successfull representation, because
+the traditional representation where the types are on the let bound variables
+don't have this property. For example, suppose that I have
+
+[λ x . e₁ : Π T₁ T₂] term-diggable
+───────────────────────────────────────
+e₁ term-diggable
+
+equivalent to rule above. However, I need to look at THREE constsructors at once:
+[_:_], λ, and Π.
+
+It can get even worse:
+[λ x . λ y . e₁ : Π T₁ (Π T₂ T₃)] term-diggable
+───────────────────────────────────────
+e₁ term-diggable
+
+Now I'm looking at 5 constructors at once!
+
+I mean obviously its possible to write the rules with that presentation, but it
+would require more concepts.
