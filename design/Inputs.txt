@@ -68,7 +68,7 @@ e₁ term-diggable
 
 (?ᵉ : T₁) type-diggable
 ───────────────────────────────────────
-T₁ type-diggable
+T₁ term-diggable
 
 λ (x : T₁) . E₁ term-diggable
 ───────────────────────────────────────
