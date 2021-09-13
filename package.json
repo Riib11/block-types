@@ -41,6 +41,7 @@
     ]
   },
   "devDependencies": {
+    "immutable": "^4.0.0-rc.14",
     "ts-node": "^10.2.1"
   }
 }
